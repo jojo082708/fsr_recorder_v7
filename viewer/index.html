@@ -244,7 +244,7 @@ const fs = META.foot_size;
 const rows = [["布鞋（量測）", META.shoe[0] + " × " + META.shoe[1]], ["腳底件外形", fs[0] + " × " + fs[1] + " × " + fs[2]],
   ["托盤放大（x>80）", "長 ×" + META.warp[1] + "、寬 ×" + META.warp[2]], ["底板面高度", "15"],
   ["S1 大拇趾球 (X, Y)", META.S1[0] + ", " + META.S1[1]], ["S2 腳跟 (X, Y)", META.S2[0] + ", +" + META.S2[1]],
-  ["感測匣嵌板", "Ø42"], ["鋼珠", "Ø5"], ["FSR 最大受力（估）", "≈ 69 N"]];
+  ["感測匣凸環", "Ø42，高出底板 3（固定）"], ["鋼珠", "Ø5"], ["FSR 最大受力（估）", "≈ 69 N"]];
 document.getElementById("dims").innerHTML = rows.map(r => "<dt>" + r[0] + "</dt><dd>" + r[1] + "</dd>").join("");
 
 (function loop() { requestAnimationFrame(loop); controls.update(); renderer.render(scene, camera); })();
