@@ -246,7 +246,7 @@ save(fig, "08_固定機構爆炸圖")
 SEC = {"F": ("#b5bcc6", "///"), "B": ("#9fb8e6", "\\\\\\"), "C": ("#cfe8c6", "///"), "TPU": ("#9fdede", "xx"),
        "STEEL": ("#e6e6ea", None), "FSR": ("#222222", None), "L": ("#e8d2b0", "///")}
 fig, bg = new_sheet(9, "雙 FSR 感測模組剖面圖", "比例 3:1 (A3)",
-                    ["受力路徑：鞋底 → C1 TPU 導槽頂面 (Ø21，高出 0.3) → TPU 柱 → C2 鋼珠 Ø5 → C5 保護傳力片 Ø10×0.5 → C3 FSR402 中央感測區 → C4 支撐座 → 腳底件底板 → 地面。",
+                    ["受力路徑：鞋底 → C1 TPU 導槽頂面 (Ø21，凸環高出底板 3 + 0.3) → TPU 柱 → C2 鋼珠 Ø5 → C5 保護傳力片 Ø10×0.5 → C3 FSR402 中央感測區 → C4 支撐座 → 腳底件底板 → 地面。",
                      "鋼珠：側向被 Ø5.15 導槽孔限制（只能上下），下方 Ø4.5 防脫唇；導槽再被 Ø21.4 頂唇與 Ø12 止擋肩鎖在感測匣內 → 不會脫出。",
                      f"過載保護：TPU 下沉超過 Stop_Gap = {P['Stop_Gap']} mm 時外環坐上止擋肩，多餘的力繞過 FSR；FSR 最大受力 ≈ 68.7·δ^1.5 ≈ {68.7 * P['Stop_Gap'] ** 1.5:.0f} N（TPU 95A 估算，需校正）。",
                      "FSR 更換：鬆開 3×M2.5 → 整個感測匣由上方取出（腳跟匣在小腿件套筒內，需先取出布鞋）。"])
@@ -266,11 +266,11 @@ for k, (S, nm) in enumerate(((S1, "A-A 剖面：S1 第一蹠骨頭（X = %.1f）
     ax.set_title(nm, fontsize=10, pad=4)
     vdim(ax, D["z_sh_top"], D["z_boss0"], c + 0.8, c + 5, f"{D['z_boss0'] - D['z_sh_top']:.2f}", fs=6)
     vdim(ax, D["z_ledge"][1], D["z_skirt0"], c - 9.5, c - 15, f"Stop_Gap {P['Stop_Gap']}", fs=6)
-    vdim(ax, ZT, D["z_pad"], c - 8, c - 19, f"{P['Pad_Proud']}", fs=6)
+    vdim(ax, ZT, D["z_pad"], c - 8, c - 19, f"凸 {D['z_pad'] - ZT:.1f}", fs=6)
     vdim(ax, 0, ZT, c + 24, c + 28, "15", fs=6)
     vdim(ax, 0, P["Base_Floor"], c + 15, c + 19, "3", fs=6)
     hdim(ax, c - P["Guide_Neck_D"] / 2, c + P["Guide_Neck_D"] / 2, D["z_pad"], D["z_pad"] + 4, "Ø21", fs=6)
-    hdim(ax, c - P["Insert_D"] / 2, c + P["Insert_D"] / 2, ZT, ZT + 8, "Ø42 定位嵌板", fs=6)
+    hdim(ax, c - P["Insert_D"] / 2, c + P["Insert_D"] / 2, D["ZR"], D["ZR"] + 8, "Ø42 凸環（高出底板 3）", fs=6)
     hdim(ax, c - P["Tube_OD"] / 2, c + P["Tube_OD"] / 2, 3.2, -4, "Ø27 導筒", fs=6)
     hdim(ax, c - P["FSR_D"] / 2, c + P["FSR_D"] / 2, D["z_seat_top"], -1.3, "FSR Ø18.3", fs=5.5)
     lab = [((c - 5, D["z_pad"] - 2), "C1 TPU 導槽 (95A)"), ((c - 0.8, D["zc_ball"] + 0.8), "C2 鋼珠 Ø5"),

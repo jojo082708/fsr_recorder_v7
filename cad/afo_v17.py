@@ -44,10 +44,11 @@ P = dict(
     Heel_Offset=12.0,             # 待確認：腳跟後緣 → 鞋底後緣
     # 感測匣
     Base_Floor=3.0, Insert_T=4.0, Insert_D=42.0, Screw_PCD=37.0,
-    Ecc_Max=2.0, Sensor_Ecc=0.0,
+    Ecc_Max=0.0, Sensor_Ecc=0.0,   # 固定位置：不做偏心 / 滑動調整
     Tube_OD=27.0, Tube_ID=22.4, Guide_D=22.0, Guide_Neck_D=21.0, Lip_ID=21.4, Ledge_ID=12.0,
     Ball_D=5.0, Bore_D=5.15, Ball_Lip_ID=4.5,
     Stop_Gap=1.0, Pad_Proud=0.3,
+    Ring_Raise=3.0,               # 感測匣外圈凸環高出底板（固定位置，不可移動）
     Seat_D=22.0, Seat_T=1.5,
     FSR_D=18.3, FSR_Active_D=12.7, FSR_T=0.45, FSR_Tail_W=7.6,
     Shield_D=10.0, Shield_T=0.5,
@@ -66,6 +67,7 @@ def derived(p):
     ZT = p["Floor_Top"]
     zf = p["Base_Floor"]
     d["ZT"] = ZT; d["ZB"] = ZT - p["Insert_T"]
+    d["ZR"] = ZT + p["Ring_Raise"]          # 凸環頂面
     d["z_seat_top"] = zf + p["Seat_T"]
     d["z_fsr_top"] = d["z_seat_top"] - 0.3 + p["FSR_T"]
     d["z_sh_top"] = d["z_fsr_top"] + p["Shield_T"]
@@ -74,9 +76,9 @@ def derived(p):
     d["z_ledge"] = (6.2, 7.4)
     d["z_skirt0"] = d["z_ledge"][1] + p["Stop_Gap"]
     d["z_boss0"] = d["z_sh_top"] + p["Stop_Gap"] + 0.4
-    d["z_lip0"] = ZT - 0.8
+    d["z_lip0"] = d["ZR"] - 0.8
     d["z_shoulder"] = d["z_lip0"] - 0.5
-    d["z_pad"] = ZT + p["Pad_Proud"]
+    d["z_pad"] = d["ZR"] + p["Pad_Proud"]
     d["pocket_D"] = p["Tube_OD"] + 2 * p["Ecc_Max"] + 1.0
     return d
 
@@ -165,7 +167,9 @@ def cartridge(p, d, S, i, tail_dir):
     out = {}
     rot = lambda w: w.rotate((cx, cy, 0), (cx, cy, 1), tail_dir)
     # C0 感測匣殼：定位嵌板 + 導筒
-    h = cyl(S[0], S[1], ZB, p["Insert_D"], p["Insert_T"])
+    ZR = d["ZR"]
+    h = cyl(S[0], S[1], ZB, p["Insert_D"], ZR - ZB)
+    h = h.edges(">Z").chamfer(1.2)
     h = h.union(cyl(cx, cy, zf + 0.2, p["Tube_OD"], ZB - zf - 0.2 + 0.01))
     h = h.cut(cyl(cx, cy, zf, p["Seat_D"] + 0.4, d["z_seat_top"] - zf))
     h = h.cut(cyl(cx, cy, d["z_seat_top"] - 0.01, p["Tube_ID"], d["z_ledge"][0] - d["z_seat_top"] + 0.02))
@@ -174,9 +178,9 @@ def cartridge(p, d, S, i, tail_dir):
     h = h.cut(cyl(cx, cy, d["z_lip0"] - 0.01, p["Lip_ID"], 2))
     h = h.cut(rot(boxc(cx, cx + 30, cy - 4.5, cy + 4.5, d["z_seat_top"] - 0.3, d["z_seat_top"] + 1.2)))
     r = p["Screw_PCD"] / 2
-    for k in range(12):
-        a = math.radians(30 * k + 15)
-        h = h.cut(csk(S[0] + r * math.cos(a), S[1] + r * math.sin(a), ZT, 2.8, 5.2, 5))
+    for k in range(3):                      # 固定 3 孔（對準底座熱熔螺母）
+        a = math.radians(15 + 120 * k)
+        h = h.cut(csk(S[0] + r * math.cos(a), S[1] + r * math.sin(a), ZR, 2.8, 5.2, 5))
     out[f"C0-{i}_感測匣殼"] = (h, "C")
     seat = cyl(cx, cy, zf, p["Seat_D"], p["Seat_T"])
     seat = seat.cut(cyl(cx, cy, d["z_seat_top"] - 0.3, p["FSR_D"] + 0.5, 1))
@@ -364,16 +368,25 @@ if __name__ == "__main__":
         b = tm.bounds
         print(f"{k:30s} {b[1][0]-b[0][0]:7.1f} x {b[1][1]-b[0][1]:6.1f} x {b[1][2]-b[0][2]:5.1f}  V={tm.volume/1000:7.2f} cm3 watertight={tm.is_watertight}")
     if len(sys.argv) > 2 and sys.argv[1] == "--export":
-        out = sys.argv[2]; os.makedirs(out, exist_ok=True)
-        os.makedirs(os.path.join(out, "STL"), exist_ok=True)
-        named = []
+        out = sys.argv[2]
+        for sub in ("STL", "STEP", "3MF"):
+            os.makedirs(os.path.join(out, sub), exist_ok=True)
+        named, printable = [], []
         for k, (w, m) in parts.items():
             code = k.split("_")[0]
             base = ASCII[code.split("-")[0]] + (("_" + code.split("-")[1]) if "-" in code else "")
             tm = as_mesh(w)
-            if not k.startswith(("E5", "E6", "C3", "L1")):
+            if k.startswith("L1"):
+                continue                       # 小腿件：沿用 v15 原檔，不輸出
+            ref = k.startswith(("E5", "E6", "C3"))   # 外購件 / 示意件
+            if not ref:
                 tm.export(os.path.join(out, "STL", base + ".stl"))
-            if not k.startswith("L1"):
-                named.append((base, tm))
-        write_faceted_step(os.path.join(out, "AFO_v17_foot_and_sensors.step"), named)
-        print("exported to", out)
+                tm.export(os.path.join(out, "3MF", base + ".3mf"))
+                printable.append(base)
+            if isinstance(w, trimesh.Trimesh):
+                write_faceted_step(os.path.join(out, "STEP", base + ".step"), [(base, tm)])
+            else:
+                cq.exporters.export(w, os.path.join(out, "STEP", base + ".step"))
+            named.append((base, tm))
+        write_faceted_step(os.path.join(out, "STEP", "AFO_v17_assembly_foot_and_sensors.step"), named)
+        print("exported to", out, "printable:", printable)
