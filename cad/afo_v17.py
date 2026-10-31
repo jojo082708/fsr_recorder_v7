@@ -37,7 +37,10 @@ P = dict(
     Floor_Top=15.0,               # 托盤底板面
     Sleeve_Inner_X=8.3,           # 小腿件套筒後牆內面（布鞋鞋跟頂到這裡）
     Sleeve_Inner_HalfW=33.2,      # 小腿件套筒內側半寬（腳跟感測匣必須在此範圍內）
-    # 布鞋（待確認）
+    # 布鞋（使用者量測：鞋底長 31 cm、鞋底寬 11 cm，左腳）
+    Shoe_Length=310.0, Shoe_Max_Width=110.0, Shoe_Clear=2.0,
+    Warp_X0=80.0,                 # 此 x 以後依鞋子尺寸拉長/加寬；後跟杯（小腿件介面）不動
+    Warp_Blend=50.0,
     Heel_Offset=12.0,             # 待確認：腳跟後緣 → 鞋底後緣
     # 感測匣
     Base_Floor=3.0, Insert_T=4.0, Insert_D=42.0, Screw_PCD=37.0,
@@ -127,6 +130,32 @@ def csk(x, y, ztop, d, dk, depth):
     return h.union(cone)
 
 
+# ------------------------------------------------------------------ 依鞋子尺寸放大托盤
+V15_TOE_FACE_X = 266.8      # v15 鞋頭擋塊 (T9) 內面 x
+V15_INNER_HALF_W = 50.3     # v15 托盤前掌內側半寬（z=20）
+
+def warp_params(p):
+    x0 = p["Warp_X0"]
+    x_face = p["Sleeve_Inner_X"] + p["Shoe_Length"] + p["Shoe_Clear"]
+    sx = (x_face - x0) / (V15_TOE_FACE_X - x0)
+    sy = (p["Shoe_Max_Width"] / 2 + p["Shoe_Clear"]) / V15_INNER_HALF_W
+    return x0, sx, max(sy, 1.0), p["Warp_Blend"]
+
+def warp_pts(V, p):
+    x0, sx, sy, bl = warp_params(p)
+    V = np.array(V, float)
+    x = V[:, 0]
+    t = np.clip((x - x0) / bl, 0, 1)
+    s = t * t * (3 - 2 * t)
+    V[:, 1] = V[:, 1] * (1 + (sy - 1) * s)
+    V[:, 0] = np.where(x > x0, x0 + (x - x0) * sx, x)
+    return V
+
+def warp_mesh(m, p, max_edge=6.0):
+    V, F = trimesh.remesh.subdivide_to_size(m.vertices, m.faces, max_edge=max_edge, max_iter=12)
+    return trimesh.Trimesh(warp_pts(V, p), F, process=True)
+
+
 # ------------------------------------------------------------------ 感測匣（CadQuery 實體）
 def cartridge(p, d, S, i, tail_dir):
     """tail_dir: FSR 尾線朝向角度（度，XY 平面）"""
@@ -203,6 +232,18 @@ def build(p=P, verbose=True):
     F = F + fillM + gapM
     d["wall_gap_top"] = wall_top
 
+    # 1b) 依鞋子尺寸放大：x > Warp_X0 拉長 sx、加寬 sy（平滑過渡）；後跟杯不動
+    F = to_manifold(warp_mesh(to_trimesh(F), p))
+    d["warp"] = warp_params(p)
+    outer9 = slice_poly(F, 9.0)
+    outer = Polygon(max(outer9.geoms, key=lambda g: g.area).exterior if hasattr(outer9, "geoms") else outer9.exterior)
+    grown = unary_union(slice_poly(F, 17.0)).buffer(8, join_style=1)
+    if hasattr(grown, "geoms"):
+        grown = max(grown.geoms, key=lambda g: g.area)
+    inner = Polygon(max(grown.interiors, key=lambda r: Polygon(r).area)).buffer(8, join_style=1)
+    outer_wall = Polygon(grown.exterior).buffer(-8, join_style=1)
+    d["outer"] = outer; d["inner"] = inner; d["outer_wall"] = outer_wall
+
     # 2) 感測器位置下方實心化（底部格柵在感測匣下方補實）
     for S in (S1, S2):
         F = F + cq_to_manifold(cyl(S[0], S[1], 0.0, p["Insert_D"] + 4, ZT - 0.01))
@@ -241,8 +282,8 @@ def build(p=P, verbose=True):
     parts["F1_AFO腳底件_v17"] = (foot_new, "F")
     leg = trimesh.load(os.path.join(V15, "AFO_leg.stl"))
     parts["L1_AFO小腿件_v15(不改)"] = (leg, "L")
-    toe = trimesh.load(os.path.join(V15, f"toe_stopper_{p['Toe_Stopper']}.stl"))
-    parts[f"T1_鞋頭擋塊_{p['Toe_Stopper']}(v15)"] = (toe, "T")
+    toe = warp_mesh(trimesh.load(os.path.join(V15, f"toe_stopper_{p['Toe_Stopper']}.stl")), p, 4.0)
+    parts[f"T1_鞋頭擋塊_{p['Toe_Stopper']}(v17放大)"] = (toe, "T")
     # 走線蓋板
     cov = ext(cover, ZT - p["Cover_T"], p["Cover_T"])
     parts["B2_走線蓋板"] = (cov, "B")

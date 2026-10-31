@@ -1,0 +1,251 @@
+<title>AFO v17 足底 FSR 平台</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* 版面：左側 3D 畫布滿版，右側（手機為下方）控制面板 */
+:root{
+  --bg:#eef1f4; --panel:#ffffff; --ink:#1d2733; --muted:#5b6876; --line:#d5dce3;
+  --accent:#1f6fb2; --accent-ink:#ffffff; --stage:#e4e9ee; --warn:#b4541a;
+  --f-body:"Noto Sans TC","PingFang TC","Microsoft JhengHei",system-ui,sans-serif;
+  --f-mono:"IBM Plex Mono",ui-monospace,Menlo,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#12171d; --panel:#1a2129; --ink:#e3e8ee; --muted:#93a1af; --line:#2c3743;
+  --accent:#5aa6e8; --accent-ink:#0d1720; --stage:#161d24; --warn:#e8935a; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#12171d; --panel:#1a2129; --ink:#e3e8ee; --muted:#93a1af; --line:#2c3743;
+  --accent:#5aa6e8; --accent-ink:#0d1720; --stage:#161d24; --warn:#e8935a; color-scheme:dark}
+html,body{height:100%}
+[hidden]{display:none!important}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:14px;line-height:1.5;margin:0}
+.app{display:grid;grid-template-columns:minmax(0,1fr) 320px;height:100%;
+  padding-left:max(0px,env(safe-area-inset-left,0px));padding-right:max(0px,env(safe-area-inset-right,0px))}
+.stage{position:relative;background:var(--stage);min-width:0;min-height:0}
+#c{display:block;width:100%;height:100%;touch-action:none}
+.views{position:absolute;left:max(12px,env(safe-area-inset-left,0px));top:12px;display:flex;flex-wrap:wrap;gap:6px;max-width:calc(100% - 24px)}
+.views button,.seg button{font:500 12.5px var(--f-body);color:var(--ink);background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:5px 10px;cursor:pointer}
+.views button[aria-pressed="true"],.seg button[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+button:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.hint{position:absolute;left:12px;bottom:10px;font-size:12px;color:var(--muted)}
+#status{position:absolute;inset:0;display:grid;place-items:center;color:var(--muted);font-size:13px;pointer-events:none}
+aside{background:var(--panel);border-left:1px solid var(--line);overflow-y:auto;padding:16px max(16px,env(safe-area-inset-right,0px)) 24px 16px;display:flex;flex-direction:column;gap:18px;min-width:0}
+h1{font-size:17px;margin:0;text-wrap:balance;font-weight:700}
+.sub{color:var(--muted);font-size:12.5px;margin-top:2px}
+h2{font-size:11.5px;letter-spacing:.08em;color:var(--muted);margin:0 0 8px;font-weight:500}
+.row{display:flex;align-items:center;gap:10px}
+.row input[type=range]{flex:1;min-width:0;accent-color:var(--accent)}
+.val{font-family:var(--f-mono);font-size:12px;width:62px;text-align:right;font-variant-numeric:tabular-nums}
+.layers{display:flex;flex-direction:column;gap:4px}
+.layers label{display:flex;align-items:center;gap:8px;cursor:pointer;padding:3px 0}
+.sw{width:12px;height:12px;border-radius:3px;border:1px solid var(--line);flex:none}
+.layers .cnt{margin-left:auto;color:var(--muted);font-family:var(--f-mono);font-size:11.5px}
+.seg{display:flex;flex-wrap:wrap;gap:6px}
+dl{display:grid;grid-template-columns:auto 1fr;gap:4px 12px;margin:0;font-size:13px}
+dt{color:var(--muted)} dd{margin:0;font-family:var(--f-mono);font-size:12.5px;font-variant-numeric:tabular-nums;text-align:right}
+.todo{font-size:12.5px;color:var(--warn);margin:0;padding-left:18px}
+.todo li{margin:2px 0}
+#pick{font-size:12.5px;min-height:1.5em}
+#pick b{font-weight:500}
+@media (max-width:760px){
+  .app{grid-template-columns:1fr;grid-template-rows:58vh auto;height:auto}
+  .stage{height:58vh}
+  aside{border-left:0;border-top:1px solid var(--line);padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));overflow:visible}
+}
+@media (prefers-reduced-motion: reduce){*{transition:none!important}}
+</style>
+
+<div class="app">
+  <div class="stage">
+    <canvas id="c" aria-label="AFO v17 3D 模型"></canvas>
+    <div class="views" role="group" aria-label="視角">
+      <button id="v-iso" aria-pressed="true">等角</button>
+      <button id="v-side">側視</button>
+      <button id="v-top">俯視</button>
+      <button id="v-front">正視</button>
+      <button id="v-rear">後視</button>
+    </div>
+    <div id="status">載入模型中…</div>
+    <div class="hint">拖曳旋轉・滾輪/雙指縮放・右鍵平移・點零件看名稱</div>
+  </div>
+  <aside>
+    <div>
+      <h1>AFO v17 足底 FSR 平台</h1>
+      <div class="sub">外穿式布鞋雙點足底力量量測・左腳・草案 B</div>
+    </div>
+    <section>
+      <h2>爆炸拆解</h2>
+      <div class="row"><input id="explode" type="range" min="0" max="1" step="0.01" value="0" aria-label="爆炸程度"><span class="val" id="explode-v">0%</span></div>
+    </section>
+    <section>
+      <h2>剖切（沿 X）</h2>
+      <div class="seg" role="group" aria-label="剖切位置">
+        <button id="cut-off" aria-pressed="true">不剖</button>
+        <button id="cut-s1">剖 S1 大拇趾球</button>
+        <button id="cut-s2">剖 S2 腳跟</button>
+      </div>
+      <div class="row" style="margin-top:8px"><input id="cut" type="range" min="-30" max="350" step="0.5" value="350" aria-label="剖切位置 X"><span class="val" id="cut-v">—</span></div>
+    </section>
+    <section>
+      <h2>顯示零件</h2>
+      <div class="layers" id="layers"></div>
+      <label class="row" style="margin-top:6px"><input type="checkbox" id="edges" checked> 輪廓線</label>
+    </section>
+    <section>
+      <h2>點選的零件</h2>
+      <div id="pick" style="color:var(--muted)">點畫面上的零件</div>
+    </section>
+    <section>
+      <h2>主要尺寸 (mm)</h2>
+      <dl id="dims"></dl>
+    </section>
+    <section>
+      <h2>待確認</h2>
+      <ul class="todo">
+        <li>鞋跟寬須 ≤ 66（小腿件套筒內寬）</li>
+        <li>S2 距腳跟 21 或 25</li>
+        <li>Heel_Offset（腳跟→鞋底後緣）暫定 12</li>
+        <li>電源方式</li>
+      </ul>
+    </section>
+  </aside>
+</div>
+
+<script type="importmap">
+{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"}}
+</script>
+<script type="module">
+import * as THREE from "three";
+import { OrbitControls } from "three/addons/controls/OrbitControls.js";
+import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
+
+const META = {"parts":[{"node":"n0","name":"F1_AFO腳底件_v17","group":"腳底件","explode":[0,0,0],"size":[346.4,133.7,76.0]},{"node":"n1","name":"L1_AFO小腿件_v15(不改)","group":"小腿件","explode":[-70,0,130],"size":[69.1,98.2,239.2]},{"node":"n2","name":"T1_鞋頭擋塊_H22_T9(v17放大)","group":"鞋頭擋塊","explode":[70,0,50],"size":[55.1,105.7,30.0]},{"node":"n3","name":"B2_走線蓋板","group":"走線蓋板","explode":[0,0,30],"size":[172.1,36.0,1.5]},{"node":"n4","name":"C0-1_感測匣殼","group":"FSR 感測匣","explode":[0,0,108],"size":[42.0,42.0,11.8]},{"node":"n5","name":"C4-1_FSR支撐座","group":"FSR 感測匣","explode":[0,0,40],"size":[22.0,22.0,1.5]},{"node":"n6","name":"C3-1_FSR402","group":"FSR 感測匣","explode":[0,0,52],"size":[35.1,18.3,0.5]},{"node":"n7","name":"C5-1_保護傳力片","group":"FSR 感測匣","explode":[0,0,62],"size":[10.0,10.0,0.5]},{"node":"n8","name":"C2-1_鋼珠Ø5","group":"FSR 感測匣","explode":[0,0,72],"size":[5.0,5.0,5.0]},{"node":"n9","name":"C1-1_TPU導槽","group":"FSR 感測匣","explode":[0,0,86],"size":[22.0,22.0,8.8]},{"node":"n10","name":"C0-2_感測匣殼","group":"FSR 感測匣","explode":[0,0,108],"size":[42.0,42.0,11.8]},{"node":"n11","name":"C4-2_FSR支撐座","group":"FSR 感測匣","explode":[0,0,40],"size":[22.0,22.0,1.5]},{"node":"n12","name":"C3-2_FSR402","group":"FSR 感測匣","explode":[0,0,52],"size":[34.0,24.4,0.5]},{"node":"n13","name":"C5-2_保護傳力片","group":"FSR 感測匣","explode":[0,0,62],"size":[10.0,10.0,0.5]},{"node":"n14","name":"C2-2_鋼珠Ø5","group":"FSR 感測匣","explode":[0,0,72],"size":[5.0,5.0,5.0]},{"node":"n15","name":"C1-2_TPU導槽","group":"FSR 感測匣","explode":[0,0,86],"size":[22.0,22.0,8.8]},{"node":"n16","name":"E5_長條麵包板(示意)","group":"電子（示意）","explode":[-95,0,130],"size":[9.5,55.0,165.0]},{"node":"n17","name":"E6_ESP32(示意)","group":"電子（示意）","explode":[-95,0,130],"size":[13.0,28.3,51.5]},{"node":"n18","name":"布鞋鞋底(示意)","group":"布鞋（示意）","explode":[0,0,210],"size":[309.3,106.9,30.0]},{"node":"n19","name":"布鞋鞋面(示意)","group":"布鞋（示意）","explode":[0,0,210],"size":[303.3,100.8,68.0]},{"node":"n20","name":"A4_前掌魔鬼氈","group":"魔鬼氈","explode":[0,0,160],"size":[38.0,125.1,50.0]},{"node":"n21","name":"A4_中足魔鬼氈","group":"魔鬼氈","explode":[0,0,160],"size":[38.0,131.5,64.1]},{"node":"n22","name":"FSR 線(示意)","group":"電子（示意）","explode":[-80,0,60],"size":[17.3,21.9,75.0]}],"S1":[197.3,-25.0],"S2":[45.3,12.0],"warp":[80.0,1.286,1.133,50.0],"foot_size":[346.4,133.7,76.0],"shoe":[310.0,110.0]};
+const GROUP_ORDER = ["腳底件","FSR 感測匣","走線蓋板","鞋頭擋塊","小腿件","電子（示意）","魔鬼氈","布鞋（示意）"];
+const HIDDEN_AT_START = new Set(["布鞋（示意）","魔鬼氈"]);
+
+const canvas = document.getElementById("c");
+const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+renderer.localClippingEnabled = true;
+const scene = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(30, 1, 1, 5000);
+const controls = new OrbitControls(camera, canvas);
+controls.enableDamping = true;
+scene.add(new THREE.HemisphereLight(0xffffff, 0x667788, 1.0));
+const sun = new THREE.DirectionalLight(0xffffff, 1.5); sun.position.set(300, 500, 400); scene.add(sun);
+const fill = new THREE.DirectionalLight(0xffffff, 0.6); fill.position.set(-400, 200, -300); scene.add(fill);
+
+// 模型座標 Z 朝上 → three.js Y 朝上
+const root = new THREE.Group(); root.rotation.x = -Math.PI / 2; scene.add(root);
+const clip = new THREE.Plane(new THREE.Vector3(-1, 0, 0), 1e5);
+const info = Object.fromEntries(META.parts.map(p => [p.node, p]));
+const nodes = []; let explodeT = 0;
+const target = new THREE.Vector3(150, 105, 0);  // three 座標
+
+function frame(dir, up = [0, 1, 0], dist = 950) {
+  const d = new THREE.Vector3(...dir).normalize();
+  camera.position.copy(target).addScaledVector(d, dist);
+  camera.up.set(...up); controls.target.copy(target); camera.lookAt(target); controls.update();
+}
+// three 座標：x = 模型 X，y = 模型 Z，z = −模型 Y（模型 +Y = 外側）
+const VIEWS = { iso:[0.75,0.6,0.85], side:[0,0.05,-1], top:[0,1,0.001], front:[1,0.05,0], rear:[-1,0.05,0] };
+const viewBtns = Object.keys(VIEWS).map(k => document.getElementById("v-" + k));
+for (const k of Object.keys(VIEWS)) document.getElementById("v-" + k).addEventListener("click", e => {
+  viewBtns.forEach(b => b.setAttribute("aria-pressed", String(b === e.currentTarget)));
+  frame(VIEWS[k], k === "top" ? [1, 0, 0] : [0, 1, 0]);
+});
+
+function resize() {
+  const r = canvas.parentElement.getBoundingClientRect();
+  renderer.setSize(r.width, r.height, false); camera.aspect = r.width / Math.max(r.height, 1); camera.updateProjectionMatrix();
+}
+new ResizeObserver(resize).observe(canvas.parentElement);
+
+const status = document.getElementById("status");
+fetch("model-glb.txt").then(r => { if (!r.ok) throw new Error(r.status); return r.text(); }).then(b64 => {
+  const bin = Uint8Array.from(atob(b64.trim()), c => c.charCodeAt(0));
+  return new Promise((res, rej) => new GLTFLoader().parse(bin.buffer, "", res, rej));
+}).then(gltf => {
+  const groups = {};
+  const found = [];
+  gltf.scene.updateMatrixWorld(true);
+  gltf.scene.traverse(o => { if (o.isMesh) found.push(o); });
+  for (const o of found) {
+    let n = o; while (n && !info[n.name]) n = n.parent;
+    const meta = n ? info[n.name] : null;
+    if (!meta) continue;
+    o.geometry.applyMatrix4(o.matrixWorld);
+    o.position.set(0, 0, 0); o.rotation.set(0, 0, 0); o.scale.set(1, 1, 1);
+    const mat = o.material.clone(); mat.side = THREE.DoubleSide; mat.clippingPlanes = [clip];
+    if (meta.group === "布鞋（示意）") { mat.transparent = true; mat.opacity = 0.45; mat.depthWrite = false; }
+    o.material = mat;
+    const edges = new THREE.LineSegments(new THREE.EdgesGeometry(o.geometry, 30),
+      new THREE.LineBasicMaterial({ color: 0x1b232c, transparent: true, opacity: 0.55, clippingPlanes: [clip] }));
+    o.add(edges); o.userData.meta = meta;
+    const holder = new THREE.Group(); holder.add(o); root.add(holder);
+    holder.userData = { meta, ex: new THREE.Vector3(...meta.explode) };
+    nodes.push(holder);
+    (groups[meta.group] ||= []).push(holder);
+  }
+  const layers = document.getElementById("layers");
+  for (const g of GROUP_ORDER) {
+    if (!groups[g]) continue;
+    const col = groups[g][0].children[0].material.color.getHexString();
+    const id = "g-" + GROUP_ORDER.indexOf(g);
+    const lab = document.createElement("label");
+    lab.innerHTML = '<input type="checkbox" id="' + id + '"' + (HIDDEN_AT_START.has(g) ? "" : " checked") + '><span class="sw" style="background:#' + col + '"></span>' + g + '<span class="cnt">' + groups[g].length + '</span>';
+    layers.appendChild(lab);
+    const cb = lab.querySelector("input");
+    const apply = () => groups[g].forEach(h => h.visible = cb.checked);
+    cb.addEventListener("change", apply); apply();
+  }
+  status.hidden = true;
+  frame(VIEWS.iso);
+}).catch(() => { status.textContent = "模型載入失敗，請重新整理頁面"; });
+
+// 爆炸
+const ex = document.getElementById("explode"), exv = document.getElementById("explode-v");
+ex.addEventListener("input", () => { explodeT = +ex.value; exv.textContent = Math.round(explodeT * 100) + "%";
+  nodes.forEach(h => h.position.copy(h.userData.ex).multiplyScalar(explodeT)); });
+
+// 剖切
+const cut = document.getElementById("cut"), cutv = document.getElementById("cut-v");
+const cutBtns = ["cut-off", "cut-s1", "cut-s2"].map(id => document.getElementById(id));
+function setCut(x, btn) {
+  clip.constant = x ?? 1e5; cut.value = x ?? 350; cutv.textContent = x == null ? "—" : "X " + (+x).toFixed(1);
+  cutBtns.forEach(b => b.setAttribute("aria-pressed", String(b === btn)));
+}
+cut.addEventListener("input", () => setCut(+cut.value, null));
+cutBtns[0].addEventListener("click", e => setCut(null, e.currentTarget));
+cutBtns[1].addEventListener("click", e => { setCut(META.S1[0], e.currentTarget); camera.position.set(META.S1[0] + 260, 140, -160); controls.target.set(META.S1[0], 10, -META.S1[1]); controls.update(); });
+cutBtns[2].addEventListener("click", e => { setCut(META.S2[0], e.currentTarget); camera.position.set(META.S2[0] + 260, 140, -160); controls.target.set(META.S2[0], 10, -META.S2[1]); controls.update(); });
+
+document.getElementById("edges").addEventListener("change", e => nodes.forEach(h => h.traverse(o => { if (o.isLineSegments) o.visible = e.target.checked; })));
+
+// 點選
+const ray = new THREE.Raycaster(), ptr = new THREE.Vector2(), pick = document.getElementById("pick");
+let down = null;
+canvas.addEventListener("pointerdown", e => down = [e.clientX, e.clientY]);
+canvas.addEventListener("pointerup", e => {
+  if (!down || Math.hypot(e.clientX - down[0], e.clientY - down[1]) > 4) return;
+  const r = canvas.getBoundingClientRect();
+  ptr.set(((e.clientX - r.left) / r.width) * 2 - 1, -((e.clientY - r.top) / r.height) * 2 + 1);
+  ray.setFromCamera(ptr, camera);
+  const vis = []; nodes.forEach(h => { if (h.visible) h.traverse(o => { if (o.isMesh) vis.push(o); }); });
+  const hit = ray.intersectObjects(vis, false).find(h => clip.distanceToPoint(h.point) >= -0.01);
+  if (!hit) { pick.innerHTML = "點畫面上的零件"; pick.style.color = "var(--muted)"; return; }
+  const m = hit.object.userData.meta;
+  pick.style.color = "var(--ink)";
+  pick.innerHTML = "<b>" + m.name.replace(/_/g, " ") + "</b><br>" + m.group + "・外形 " + m.size.join(" × ") + " mm";
+});
+
+// 尺寸
+const fs = META.foot_size;
+const rows = [["布鞋（量測）", META.shoe[0] + " × " + META.shoe[1]], ["腳底件外形", fs[0] + " × " + fs[1] + " × " + fs[2]],
+  ["托盤放大（x>80）", "長 ×" + META.warp[1] + "、寬 ×" + META.warp[2]], ["底板面高度", "15"],
+  ["S1 大拇趾球 (X, Y)", META.S1[0] + ", " + META.S1[1]], ["S2 腳跟 (X, Y)", META.S2[0] + ", +" + META.S2[1]],
+  ["感測匣嵌板", "Ø42"], ["鋼珠", "Ø5"], ["FSR 最大受力（估）", "≈ 69 N"]];
+document.getElementById("dims").innerHTML = rows.map(r => "<dt>" + r[0] + "</dt><dd>" + r[1] + "</dd>").join("");
+
+(function loop() { requestAnimationFrame(loop); controls.update(); renderer.render(scene, camera); })();
+</script>
