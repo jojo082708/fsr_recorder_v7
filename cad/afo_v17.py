@@ -55,6 +55,7 @@ P = dict(
     # 走線
     Wire_W=6.0, Wire_Bottom=10.0, Cover_W=9.0, Cover_T=1.5, Exit_D=5.0,
     Toe_Stopper="H22_T9",
+    Toe_Clear=3.0, Toe_Shell=12.0, Toe_H=22.0, Toe_Region=0.80, Toe_Peg_D=6.0,   # 客製擋塊：腳趾間隙、殼厚、高度、起始位置（腳長比例）
     # 分件（印表機 300 × 300 × 350）：x = Split_X 處搭接，M4 平頭螺絲由底面鎖入後段的熱熔螺母
     Split_X=120.0, Lap_L=30.0, Lap_Z=7.0, Split_Gap=0.15,
     Split_Screw_Y=(-42.0, -2.0, 38.0), Split_Screw_DX=(-7.5, 7.5),
@@ -68,7 +69,7 @@ VARIANTS = {
                  Toe_Stopper="H22_T9"),
     # 赤腳：腳掌長 25.4 cm、最寬 10 cm（量測，左腳），腳跟直接頂住小腿件套筒內面；長度 < 300 → 一件列印
     "barefoot": dict(Variant_Name="赤腳版", Shoe_Length=254.0, Shoe_Max_Width=100.0, Heel_Offset=0.0, Split=False,
-                     Toe_Stopper=None),   # 赤腳不裝鞋頭擋塊（擋塊弧形會壓到大拇趾），由托盤前牆限位
+                     Toe_Stopper="custom"),   # 赤腳：客製鞋頭擋塊（內緣沿腳趾輪廓 + 間隙，插腳沿用 v15 H22_T9）
 }
 VARIANT = os.environ.get("AFO_VARIANT", "shoe")
 P.update(VARIANTS[VARIANT])
@@ -238,7 +239,8 @@ def build(p=P, verbose=True):
 
     # 1) 刪除 v15 舊 FSR 構造：底板 z 10→15 填平（x < 228，保留鞋頭擋塊插槽）
     keep_toe = sbox(228, -100, 400, 100)
-    fill = outer.buffer(-1.0).difference(keep_toe) if p.get("Toe_Stopper") else outer.buffer(-1.0)   # 赤腳版：擋塊插槽一併填平
+    v15_toe = p.get("Toe_Stopper") not in (None, "custom")
+    fill = outer.buffer(-1.0).difference(keep_toe) if v15_toe else outer.buffer(-1.0)   # 客製擋塊 / 無擋塊：舊插槽一併填平
     fillM = cq_to_manifold(ext(fill, 10.0, ZT - 10.0))
     # 牆缺口：v15 舊走線槽在 x≈94~106 貫穿兩側牆（z 11→19），補實
     gapM = None
@@ -285,6 +287,11 @@ def build(p=P, verbose=True):
         for k in range(3):
             a = math.radians(15 + 120 * k)
             add(cyl(S[0] + r * math.cos(a), S[1] + r * math.sin(a), d["ZB"] - 5, 3.6, 5.2))
+    # 3b) 客製鞋頭擋塊插腳孔
+    if p.get("Toe_Stopper") == "custom":
+        shell, pegs_xy = toe_shell(p, d)
+        for (x, y) in pegs_xy:
+            add(cyl(x, y, ZT - 7.0, p["Toe_Peg_D"] + 0.3, 8.0))
     # 4) 走線槽 → 後跟出線孔
     s = 1 if p["Side"] == "L" else -1
     path1 = LineString([S1, (S1[0] - 30, S1[1]), (75, s * -22), (22, 0), (-8, 0)])
@@ -311,7 +318,9 @@ def build(p=P, verbose=True):
         parts["F1B_腳底件前段(分件)"] = (front, "F")
     leg = trimesh.load(os.path.join(V15, "AFO_leg.stl"))
     parts["L1_AFO小腿件_v15(不改)"] = (leg, "L")
-    if p.get("Toe_Stopper"):
+    if p.get("Toe_Stopper") == "custom":
+        parts["T1_鞋頭擋塊_客製(依腳型)"] = (custom_toe_stopper(p, d), "T")
+    elif p.get("Toe_Stopper"):
         toe = warp_mesh(trimesh.load(os.path.join(V15, f"toe_stopper_{p['Toe_Stopper']}.stl")), p, 4.0)
         parts[f"T1_鞋頭擋塊_{p['Toe_Stopper']}(v17放大)"] = (toe, "T")
     # 走線蓋板
@@ -328,6 +337,50 @@ def build(p=P, verbose=True):
     if verbose:
         print("S1", S1, "S2", S2, "wall_gap_top", round(wall_top, 1))
     return parts, d
+
+
+def foot_in_tray(p):
+    """腳印輪廓依量測腳長 / 腳寬縮放，放到托盤座標（腳跟後緣在 套筒內面 + Heel_Offset）"""
+    c = np.loadtxt(os.path.join(HERE, "data", "footprint_outline_mm.csv"), delimiter=",")
+    sx = p["Shoe_Length"] / p["Foot_Length"] if p.get("Heel_Offset", 0) == 0 else 1.0
+    sy = p["Shoe_Max_Width"] / p["Foot_Max_Width"] if p.get("Heel_Offset", 0) == 0 else 1.0
+    x0 = p["Sleeve_Inner_X"] + p["Heel_Offset"]
+    return Polygon(np.c_[c[:, 0] * sx + x0, c[:, 1] * sy]).buffer(0)
+
+
+def toe_shell(p, d):
+    """客製鞋頭擋塊 2D 外形（內緣 = 腳趾包絡 + Toe_Clear，厚 Toe_Shell，不超出托盤內牆）與 2 支插腳位置"""
+    foot = foot_in_tray(p).buffer(15, join_style=1).buffer(-15, join_style=1)   # 腳趾縫補平 → 包絡外形
+    x0 = p["Sleeve_Inner_X"] + p["Heel_Offset"] + p["Toe_Region"] * p["Shoe_Length"]
+    gap = foot.buffer(p["Toe_Clear"], join_style=1)
+    shell = gap.buffer(p["Toe_Shell"], join_style=1).difference(gap)
+    shell = shell.intersection(d["inner"].buffer(-0.4)).intersection(sbox(x0, -200, 500, 200))
+    shell = shell.buffer(1.0, join_style=1).buffer(-1.0, join_style=1)
+    if hasattr(shell, "geoms"):
+        shell = max(shell.geoms, key=lambda g: g.area)
+    core = shell.buffer(-(p["Toe_Peg_D"] / 2 + 2.0))
+    xs, ys = np.meshgrid(np.arange(x0, 400, 1.0), np.arange(-80, 80, 1.0))
+    cand = [(x, y) for x, y in zip(xs.ravel(), ys.ravel()) if core.contains(Point(x, y))]
+    pegs = []
+    if cand:
+        c = np.array(cand)
+        a = c[np.argmax(c[:, 0])]                                  # 最前端
+        b = c[np.argmax(np.hypot(*(c - a).T))]                     # 離前端最遠（側邊）
+        pegs = [tuple(a), tuple(b)]
+    d["toe_shell"] = shell; d["toe_pegs"] = pegs
+    return shell, pegs
+
+
+def custom_toe_stopper(p, d):
+    """客製鞋頭擋塊：依腳型的殼體 + 2 支 Ø6 插腳（插入底板孔）"""
+    shell, pegs = d.get("toe_shell"), d.get("toe_pegs")
+    if shell is None:
+        shell, pegs = toe_shell(p, d)
+    ZT = d["ZT"]
+    w = ext(shell.simplify(0.1), ZT, p["Toe_H"])
+    for (x, y) in pegs:
+        w = w.union(cyl(x, y, ZT - 6.5, p["Toe_Peg_D"], 6.6))
+    return as_mesh(w)
 
 
 def split_foot(F, p, d):

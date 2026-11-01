@@ -75,7 +75,7 @@ M["W_FSR線(示意)"] = wire_tube; MOD["W_FSR線(示意)"] = "WIRE"
 FOOT = "F1_AFO腳底件_v17"; LEG = "L1_AFO小腿件_v15(不改)"
 TOES = [k for k in parts if k.startswith("T1")]
 TOE = TOES[0] if TOES else None
-TOE_TXT = "T1 鞋頭擋塊（隨托盤調整）" if TOE else "托盤前牆（腳尖限位，赤腳版無擋塊）"
+TOE_TXT = ("T1 客製鞋頭擋塊（依腳型）" if "客製" in TOE else "T1 鞋頭擋塊（隨托盤調整）") if TOE else "托盤前牆（腳尖限位）"
 CART = [k for k in parts if k.startswith("C")]
 CART_TOP = [k for k in CART if k.startswith(("C0", "C1"))]
 COVER = "B2_走線蓋板"
