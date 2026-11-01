@@ -16,10 +16,13 @@ import drawing_lib as dl
 OUT = sys.argv[1] if len(sys.argv) > 1 else os.path.join(os.path.dirname(HERE), "drawings")
 P = A.P
 parts, D = A.build(P, verbose=False)
+BARE = P["Heel_Offset"] == 0 and not P.get("Split", True)
+dl.TAG = f"AFO v17 {P['Variant_Name']} / 左腳"
 ZT = D["ZT"]; S1, S2 = D["S1"], D["S2"]
 X0 = P["Sleeve_Inner_X"] + P["Heel_Offset"]          # 腳跟後緣在托盤上的 X
 foot = A.as_mesh(parts["F1_AFO腳底件_v17"][0])
-toe = A.as_mesh([w for k, (w, m) in parts.items() if k.startswith("T1")][0])
+_t = [w for k, (w, m) in parts.items() if k.startswith("T1")]
+toe = A.as_mesh(_t[0]) if _t else None
 cart = [A.as_mesh(w) for k, (w, m) in parts.items() if k.startswith(("C0", "C1"))]
 cover = A.as_mesh(parts["B2_走線蓋板"][0])
 
@@ -30,10 +33,10 @@ shoe = shoe.buffer(6, join_style=1).buffer(-6, join_style=1)
 
 fig, bg = dl.new_sheet(13, "腳印 × 鞋型 × 托盤 重合俯視圖", "比例 1:1.25 (A3)",
                        [f"紅色 = 使用者腳印照片（左腳，依比例 6.25 px/mm 置入）；腳跟後緣放在 X = 套筒內面 8.3 + Heel_Offset* {P['Heel_Offset']:.0f} = {X0:.1f}。",
-                        f"橘色虛線 = 布鞋鞋底 {P['Shoe_Length']:.0f} × {P['Shoe_Max_Width']:.0f}（量測值，鞋跟段受小腿件套筒內寬 66.4 限制）；藍灰 = AFO 腳底件 v17 托盤。",
+                        f"橘色虛線 = {'腳掌外形' if BARE else '布鞋鞋底'} {P['Shoe_Length']:.0f} × {P['Shoe_Max_Width']:.0f}（量測值，鞋跟段受小腿件套筒內寬 66.4 限制）；藍灰 = AFO 腳底件 v17 托盤。",
                         "S1 / S2 = 鋼珠式 FSR 感測匣中心（Ø21 TPU 傳力面，Ø42 嵌板）。帶 * 者待確認。"])
 ax = dl.view_axes(fig, (16, 50, 388, 232), 1.25)
-lo, hi = dl.render(ax, [(foot, (0.70, 0.76, 0.86), 1.0), (toe, (0.95, 0.70, 0.45), 1.0), (cover, (0.55, 0.68, 0.9), 1.0)]
+lo, hi = dl.render(ax, [(foot, (0.70, 0.76, 0.86), 1.0)] + ([(toe, (0.95, 0.70, 0.45), 1.0)] if toe is not None else []) + [(cover, (0.55, 0.68, 0.9), 1.0)]
                    + [(m, (0.62, 0.84, 0.58), 1.0) for m in cart], (0, 0, -1), (0, 1, 0), lw=0.3)
 dl.set_center(ax, ((lo + hi) / 2) + np.array([0, -4]))
 
@@ -63,16 +66,16 @@ ax.plot(0, 0, "k+", ms=9); ax.text(-6, -7, "O", fontsize=8)
 yb = foot.bounds[0][1]
 dl.hdim(ax, 0, X0, yb, yb - 8, f"{X0:.1f}*", fs=7)
 dl.hdim(ax, X0, X0 + P["Foot_Length"], yb, yb - 16, f"腳長 {P['Foot_Length']:.0f}", fs=7)
-dl.hdim(ax, P["Sleeve_Inner_X"], P["Sleeve_Inner_X"] + P["Shoe_Length"], yb, yb - 24, f"鞋底長 {P['Shoe_Length']:.0f}", fs=7)
+dl.hdim(ax, P["Sleeve_Inner_X"], P["Sleeve_Inner_X"] + P["Shoe_Length"], yb, yb - 24, f"{'腳掌長' if BARE else '鞋底長'} {P['Shoe_Length']:.0f}", fs=7)
 dl.hdim(ax, foot.bounds[0][0], foot.bounds[1][0], yb, yb - 32, f"腳底件 {foot.bounds[1][0] - foot.bounds[0][0]:.0f}", fs=7)
 xr = foot.bounds[1][0]
-dl.vdim(ax, -P["Shoe_Max_Width"] / 2, P["Shoe_Max_Width"] / 2, 300, xr + 8, f"鞋寬 {P['Shoe_Max_Width']:.0f}", fs=7)
+dl.vdim(ax, -P["Shoe_Max_Width"] / 2, P["Shoe_Max_Width"] / 2, 300, xr + 8, f"{'腳寬' if BARE else '鞋寬'} {P['Shoe_Max_Width']:.0f}", fs=7)
 dl.vdim(ax, foot.bounds[0][1], foot.bounds[1][1], xr, xr + 18, f"{foot.bounds[1][1] - foot.bounds[0][1]:.0f}", fs=7)
 dl.vdim(ax, -33.2, 33.2, 8.3, -12, "套筒內寬 66.4", fs=6.5)
 ax.text(hi[0], foot.bounds[1][1] + 4, "外側 (+Y)", ha="right", fontsize=7.5)
 ax.text(hi[0], foot.bounds[0][1] - 40, "內側 (−Y)", ha="right", fontsize=7.5)
 ax.legend(handles=[Line2D([], [], color="#d62728", lw=6, alpha=0.6, label="腳印（照片）"),
-                   Line2D([], [], color="#e67e22", ls="--", lw=1.4, label="布鞋鞋底 310 × 110"),
+                   Line2D([], [], color="#e67e22", ls="--", lw=1.4, label=f"{'腳掌' if BARE else '布鞋鞋底'} {P['Shoe_Length']:.0f} × {P['Shoe_Max_Width']:.0f}"),
                    Line2D([], [], color="#6c3483", ls=":", label="小腿件套筒內側"),
                    Line2D([], [], color="#0b3d6b", marker="o", ls="", mfc="none", label="FSR 感測位置")],
           loc="upper left", fontsize=7.5, frameon=False)

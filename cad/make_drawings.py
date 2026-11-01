@@ -21,6 +21,11 @@ os.makedirs(OUT, exist_ok=True)
 t0 = time.time()
 P = A.P
 parts, D = A.build(P, verbose=False)
+BARE = not P.get("Split", True) and P["Heel_Offset"] == 0
+ITEM = "腳掌" if BARE else "鞋底"
+WEAR = "腳（示意）" if BARE else "布鞋"
+SZ = f"{P['Shoe_Length']:.0f}×{P['Shoe_Max_Width']:.0f}"
+dl.TAG = f"AFO v17 {P['Variant_Name']} / 左腳"
 S1, S2 = D["S1"], D["S2"]
 ZT = D["ZT"]
 inner = D["inner"]
@@ -68,7 +73,9 @@ wire_tube = trimesh.util.concatenate([trimesh.creation.cylinder(radius=1.4, segm
 M["W_FSR線(示意)"] = wire_tube; MOD["W_FSR線(示意)"] = "WIRE"
 
 FOOT = "F1_AFO腳底件_v17"; LEG = "L1_AFO小腿件_v15(不改)"
-TOE = [k for k in parts if k.startswith("T1")][0]
+TOES = [k for k in parts if k.startswith("T1")]
+TOE = TOES[0] if TOES else None
+TOE_TXT = "T1 鞋頭擋塊（隨托盤調整）" if TOE else "托盤前牆（腳尖限位，赤腳版無擋塊）"
 CART = [k for k in parts if k.startswith("C")]
 CART_TOP = [k for k in CART if k.startswith(("C0", "C1"))]
 COVER = "B2_走線蓋板"
@@ -101,7 +108,7 @@ def save(fig, name):
     SH.append(name)
     print("sheet", name, round(time.time() - t0, 1), flush=True)
 
-PLAT = [FOOT, LEG, TOE, COVER] + CART_TOP
+PLAT = [FOOT, LEG] + TOES + [COVER] + CART_TOP
 PLAT_EL = PLAT + EL + ["W_FSR線(示意)"]
 fb = M[FOOT].bounds
 LB = M[LEG].bounds
@@ -126,9 +133,9 @@ vdim(ax, 0, fb[1][2], xs(30), xs(fb[1][0]) + 25, f"{fb[1][2]:.0f}  (後跟杯)")
 vdim(ax, 0, LB[1][2], xs(LB[0][0]), xs(LB[0][0]) - 18, f"{LB[1][2]:.1f}  (含小腿件)")
 leader(ax, P2((10, 0, 160), "side"), (xs(80), 210), "L1 AFO 小腿件 v15（已列印，不改）")
 leader(ax, P2((-28, 0, 200), "side"), (xs(-90), 235), "E5/E6 麵包板 + ESP32（小腿件背面，示意）", ha="left")
-leader(ax, P2((255, 0, ZT + 10), "side"), (xs(240), 70), "T1 鞋頭擋塊（隨托盤放大）")
+leader(ax, P2((255, 0, ZT + 10), "side"), (xs(240), 70), TOE_TXT)
 leader(ax, P2((STRAP_X[0], -60, 28), "side"), (xs(STRAP_X[0] + 10), 95), "束帶扣環（v15 造型，隨托盤放大）")
-leader(ax, P2((120, 0, 12), "side"), (xs(130), -45), "F1 腳底件 v17（依鞋 310×110 放大，後跟杯不動）")
+leader(ax, P2((120, 0, 12), "side"), (xs(130), -45), f"F1 腳底件 v17（依{ITEM} {SZ} 調整，後跟杯不動）")
 save(fig, "01_側視圖")
 
 # ================================================================== 02 正視 / 03 後視
@@ -153,12 +160,12 @@ for no, v, title in ((2, "front", "整體正視圖（由腳尖向後看）"), (3
         leader(ax, P2((0, 0, ex[2]), v), (yy(45), -10), "Ø5 出線孔 (z=%.1f)" % ex[2])
         leader(ax, P2((-20, 0, 160), v), (yy(70), 170), "E5 麵包板（小腿件背面，示意）")
     else:
-        leader(ax, P2((276, 20, ZT + 10), v), (yy(70), 60), "T1 鞋頭擋塊")
+        leader(ax, P2((276, 20, ZT + 10), v), (yy(70), 60), TOE_TXT)
     save(fig, f"{no:02d}_{'正視圖' if v == 'front' else '後視圖'}")
 
 # ================================================================== 04 俯視圖
 fig, bg = new_sheet(4, "整體俯視圖（托盤底板與感測匣配置）", "比例 1:1.25 (A3)",
-                    ["註：1. v15 AFO 托盤造型，依鞋底 310×110 自 x=80 起拉長 ×%.3f、加寬 ×%.3f（後跟杯與小腿件介面不動）；v15 舊 FSR 溝槽已填平到 z=15。" % (D["warp"][1], D["warp"][2]),
+                    ["註：1. v15 AFO 托盤造型，依" + ITEM + " " + SZ + " 自 x=80 起拉長 ×%.3f、加寬 ×%.3f（後跟杯與小腿件介面不動）；v15 舊 FSR 溝槽已填平到 z=15。" % (D["warp"][1], D["warp"][2]),
                      "2. S1 = 第一蹠骨頭、S2 = 腳跟中心；X = 套筒內面 8.3 + Heel_Offset* 12 + 腳印量測值。紅色虛線圓 = 偏心嵌板微調範圍 R2。",
                      "3. 走線槽 6 寬 × 3.5 深（z 10→13.5），上蓋 B2 走線蓋板 1.5t 與底板齊平 → 電線不外露於鞋底摩擦面；經後跟杯背面 Ø5 孔出線。"])
 ax = view_axes(fig, (20, 52, 380, 228), 1.25)
@@ -181,7 +188,7 @@ vdim(ax, T(0, 0)[1], T(0, S2[1])[1], T(S2[0], 0)[0], T(S2[0] + 32, 0)[0], f"{abs
 vdim(ax, T(0, -33.2)[1], T(0, 33.2)[1], T(8.3, 0)[0], T(-14, 0)[0], "66.4 套筒內寬", fs=6.5)
 leader(ax, T(120, -18), (T(150, 0)[0], T(0, -80)[1]), "B2 走線蓋板 (1.5t，齊平)")
 leader(ax, T(S1[0] + 15, S1[1] - 12), (T(235, 0)[0], T(0, -78)[1]), "C 感測匣 Ø42（3×M2.5，12 孔 / 30°）")
-leader(ax, T(P["Sleeve_Inner_X"] + P["Shoe_Length"], 0), (T(300, 0)[0], T(0, 90)[1]), "鞋尖位置（鞋長 310 + 間隙 2）")
+leader(ax, T(P["Sleeve_Inner_X"] + P["Shoe_Length"], 0), (T(300, 0)[0], T(0, 90)[1]), f"{ITEM}前緣（長 {P['Shoe_Length']:.0f} + 間隙 2）")
 save(fig, "04_俯視圖")
 
 # ================================================================== 05 底視圖
@@ -212,28 +219,30 @@ for pt, t, txt in (((20, -38, 150), (-80, 10), "L1"), ((S1[0], S1[1], ZT), (60, 
 save(fig, "06_等角圖")
 
 # ================================================================== 07 布鞋 + AFO
-fig, bg = new_sheet(7, "布鞋與平台組合等角圖", "不依比例（布鞋為示意外形）",
-                    ["穿戴：穿好布鞋 → 整隻鞋放進托盤，鞋跟頂住小腿件套筒內面 → 鞋頭由 T1 擋塊定位（鞋長 310）→ 扣前掌、中足魔鬼氈 → 扣小腿束帶。",
+fig, bg = new_sheet(7, f"{WEAR}與平台組合等角圖", f"不依比例（{WEAR}為示意外形）",
+                    (["穿戴：赤腳（可穿襪）放進托盤，腳跟頂住小腿件套筒內面 → 腳尖由 T1 擋塊限位 → 扣前掌、中足魔鬼氈 → 扣小腿束帶。",
+                      "Ø42 凸環高出底板 3 mm，直接接觸腳底；建議鋪 3 mm EVA 鞋墊（感測匣處開 Ø44 孔）讓腳底與凸環齊平，感測器仍受力。"] if BARE else None) or ["穿戴：穿好布鞋 → 整隻鞋放進托盤，鞋跟頂住小腿件套筒內面 → 鞋頭由 T1 擋塊定位（鞋長 310）→ 扣前掌、中足魔鬼氈 → 扣小腿束帶。",
                      "不拆解、不開孔、不修改布鞋。鞋底與底板間建議貼 1 mm 止滑矽膠片（感測匣位置開 Ø22 孔）。"])
 ax = fig.add_axes([0.03, 0.16, 0.94, 0.81]); ax.set_aspect("equal"); ax.axis("off")
 names = PLAT_EL + ["SHOE_sole", "SHOE_upper", "A4_前掌魔鬼氈", "A4_中足魔鬼氈"]
 lo, hi = draw(ax, names, "iso", alpha={"SHOE_upper": 0.5, "SHOE_sole": 0.85}); ax.set_xlim(lo[0] - 70, hi[0] + 70); ax.set_ylim(lo[1] - 25, hi[1] + 25)
-for pt, t, txt in (((120, 0, ZT + SOLE_T + 40), (-30, 95), "布鞋（使用者自有）"), ((STRAP_X[1], 0, ZT + SOLE_T + 34), (90, 40), "A4 前掌魔鬼氈"),
+for pt, t, txt in (((120, 0, ZT + SOLE_T + 40), (-30, 95), "布鞋（使用者自有）" if not BARE else "腳（示意）"), ((STRAP_X[1], 0, ZT + SOLE_T + 34), (90, 40), "A4 前掌魔鬼氈"),
                    ((STRAP_X[0], 0, ZT + SOLE_T + 48), (40, 90), "A4 中足魔鬼氈"), ((20, -38, 150), (-80, 10), "L1 小腿件")):
     p = I(pt); balloon(ax, p, p + np.array(t), txt)
 save(fig, "07_布鞋平台組合等角圖")
 
 # ================================================================== 08 固定機構爆炸圖
-fig, bg = new_sheet(8, "布鞋固定機構爆炸圖", "不依比例",
+fig, bg = new_sheet(8, f"{'腳部' if BARE else '布鞋'}固定機構爆炸圖", "不依比例",
                     ["L1 小腿件（v15 原件）：下緣套筒插入腳底件後跟杯內側（間隙約 0.4），以兩側螺絲固定；套筒內面即鞋跟定位面。",
-                     "T1 鞋頭擋塊：v15 造型隨托盤一起放大（T9 → 對應鞋長 310）；鞋長變動時改 Shoe_Length 重新產生。",
+                     f"T1 鞋頭擋塊：v15 造型隨托盤一起調整（對應{ITEM}長 {P['Shoe_Length']:.0f}）；長度變動時改 Shoe_Length 重新產生。",
                      "A4 魔鬼氈 38 mm × 2：穿過托盤兩側扣環（x≈157、x≈218）跨過鞋面；小腿部分沿用 v15 小腿束帶。"])
 ax = fig.add_axes([0.03, 0.17, 0.94, 0.8]); ax.set_aspect("equal"); ax.axis("off")
-off = {LEG: (-40, 0, 90), TOE: (60, 0, 50), "A4_前掌魔鬼氈": (0, 0, 70), "A4_中足魔鬼氈": (0, 0, 90)}
-names = [FOOT, COVER] + CART_TOP + [LEG, TOE, "A4_前掌魔鬼氈", "A4_中足魔鬼氈"]
+off = {LEG: (-40, 0, 90), "A4_前掌魔鬼氈": (0, 0, 70), "A4_中足魔鬼氈": (0, 0, 90)}
+if TOE: off[TOE] = (60, 0, 50)
+names = [FOOT, COVER] + CART_TOP + [LEG] + TOES + ["A4_前掌魔鬼氈", "A4_中足魔鬼氈"]
 lo, hi = draw(ax, names, "iso2", off=off); ax.set_xlim(lo[0] - 60, hi[0] + 60); ax.set_ylim(lo[1] - 20, hi[1] + 20)
 I2 = lambda pt: P2(pt, "iso2")
-for n, t, txt in ((LEG, (-70, 20), "L1 小腿件 (v15)"), (TOE, (70, 20), "T1 鞋頭擋塊"), ("A4_前掌魔鬼氈", (80, 30), "A4 前掌"), ("A4_中足魔鬼氈", (-60, 40), "A4 中足"),
+for n, t, txt in ((LEG, (-70, 20), "L1 小腿件 (v15)"), (TOE or FOOT, (70, 20), TOE_TXT), ("A4_前掌魔鬼氈", (80, 30), "A4 前掌"), ("A4_中足魔鬼氈", (-60, 40), "A4 中足"),
                   (FOOT, (60, -60), "F1 腳底件 v17")):
     b = M[n].bounds; c = (b[0] + b[1]) / 2; o_ = np.asarray(off.get(n, (0, 0, 0)))
     p = I2(c + o_); balloon(ax, p, p + np.array(t), txt)
@@ -249,7 +258,7 @@ fig, bg = new_sheet(9, "雙 FSR 感測模組剖面圖", "比例 3:1 (A3)",
                     ["受力路徑：鞋底 → C1 TPU 導槽頂面 (Ø21，凸環高出底板 3 + 0.3) → TPU 柱 → C2 鋼珠 Ø5 → C5 保護傳力片 Ø10×0.5 → C3 FSR402 中央感測區 → C4 支撐座 → 腳底件底板 → 地面。",
                      "鋼珠：側向被 Ø5.15 導槽孔限制（只能上下），下方 Ø4.5 防脫唇；導槽再被 Ø21.4 頂唇與 Ø12 止擋肩鎖在感測匣內 → 不會脫出。",
                      f"過載保護：TPU 下沉超過 Stop_Gap = {P['Stop_Gap']} mm 時外環坐上止擋肩，多餘的力繞過 FSR；FSR 最大受力 ≈ 68.7·δ^1.5 ≈ {68.7 * P['Stop_Gap'] ** 1.5:.0f} N（TPU 95A 估算，需校正）。",
-                     "FSR 更換：鬆開 3×M2.5 → 整個感測匣由上方取出（腳跟匣在小腿件套筒內，需先取出布鞋）。"])
+                     "FSR 更換：鬆開 3×M2.5 → 整個感測匣由上方取出（腳跟匣在小腿件套筒內，需先取出布鞋/腳）。"])
 for k, (S, nm) in enumerate(((S1, "A-A 剖面：S1 第一蹠骨頭（X = %.1f）" % S1[0]), (S2, "B-B 剖面：S2 腳跟（X = %.1f）" % S2[0]))):
     ax = view_axes(fig, (16 + k * 198, 62, 190, 210), 1 / 3.0)
     cx = S[0] + P["Sensor_Ecc"]
@@ -321,7 +330,8 @@ save(fig, "10_電子模組與走線圖")
 
 # ================================================================== 11 整體爆炸
 fig, bg = new_sheet(11, "整體系統爆炸組裝圖", "不依比例")
-X_off = {FOOT: (0, 0, 0), COVER: (0, 0, 40), LEG: (-60, 0, 120), TOE: (70, 0, 60)}
+X_off = {FOOT: (0, 0, 0), COVER: (0, 0, 40), LEG: (-60, 0, 120)}
+if TOE: X_off[TOE] = (70, 0, 60)
 for n in CART:
     lvl = {"C4": 45, "C3": 58, "C5": 68, "C2": 78, "C1": 92, "C0": 112}[n[:2]]
     X_off[n] = (0, 0, lvl)

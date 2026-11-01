@@ -61,6 +61,19 @@ P = dict(
 )
 
 
+# ------------------------------------------------------------------ 兩個版本
+VARIANTS = {
+    # 穿布鞋：鞋底 310 × 110（量測），腳跟後緣到鞋底後緣 Heel_Offset 待確認；長 346 → 分兩件列印
+    "shoe": dict(Variant_Name="穿鞋版", Shoe_Length=310.0, Shoe_Max_Width=110.0, Heel_Offset=12.0, Split=True,
+                 Toe_Stopper="H22_T9"),
+    # 赤腳：腳掌長 25.4 cm、最寬 10 cm（量測，左腳），腳跟直接頂住小腿件套筒內面；長度 < 300 → 一件列印
+    "barefoot": dict(Variant_Name="赤腳版", Shoe_Length=254.0, Shoe_Max_Width=100.0, Heel_Offset=0.0, Split=False,
+                     Toe_Stopper=None),   # 赤腳不裝鞋頭擋塊（擋塊弧形會壓到大拇趾），由托盤前牆限位
+}
+VARIANT = os.environ.get("AFO_VARIANT", "shoe")
+P.update(VARIANTS[VARIANT])
+
+
 def derived(p):
     s = 1 if p["Side"] == "L" else -1
     fw = p["Foot_Max_Width"]
@@ -225,7 +238,7 @@ def build(p=P, verbose=True):
 
     # 1) 刪除 v15 舊 FSR 構造：底板 z 10→15 填平（x < 228，保留鞋頭擋塊插槽）
     keep_toe = sbox(228, -100, 400, 100)
-    fill = outer.buffer(-1.0).difference(keep_toe)
+    fill = outer.buffer(-1.0).difference(keep_toe) if p.get("Toe_Stopper") else outer.buffer(-1.0)   # 赤腳版：擋塊插槽一併填平
     fillM = cq_to_manifold(ext(fill, 10.0, ZT - 10.0))
     # 牆缺口：v15 舊走線槽在 x≈94~106 貫穿兩側牆（z 11→19），補實
     gapM = None
@@ -257,7 +270,8 @@ def build(p=P, verbose=True):
 
     # 2b) 分件搭接區實心化（底部格柵在接合處補實）
     xs0, xs1 = p["Split_X"] - p["Lap_L"] / 2 - 6, p["Split_X"] + p["Lap_L"] / 2 + 6
-    F = F + cq_to_manifold(ext(outer.buffer(-1.0).intersection(sbox(xs0, -200, xs1, 200)), 0.0, ZT - 0.01))
+    if p.get("Split", True):
+        F = F + cq_to_manifold(ext(outer.buffer(-1.0).intersection(sbox(xs0, -200, xs1, 200)), 0.0, ZT - 0.01))
 
     # 3) 感測匣口袋 + 嵌板沉台 + 熱熔螺母
     cut = None
@@ -291,13 +305,15 @@ def build(p=P, verbose=True):
 
     parts = {}
     parts["F1_AFO腳底件_v17"] = (foot_new, "F")
-    rear, front = split_foot(F, p, d)
-    parts["F1A_腳底件後段(分件)"] = (rear, "F")
-    parts["F1B_腳底件前段(分件)"] = (front, "F")
+    if p.get("Split", True):
+        rear, front = split_foot(F, p, d)
+        parts["F1A_腳底件後段(分件)"] = (rear, "F")
+        parts["F1B_腳底件前段(分件)"] = (front, "F")
     leg = trimesh.load(os.path.join(V15, "AFO_leg.stl"))
     parts["L1_AFO小腿件_v15(不改)"] = (leg, "L")
-    toe = warp_mesh(trimesh.load(os.path.join(V15, f"toe_stopper_{p['Toe_Stopper']}.stl")), p, 4.0)
-    parts[f"T1_鞋頭擋塊_{p['Toe_Stopper']}(v17放大)"] = (toe, "T")
+    if p.get("Toe_Stopper"):
+        toe = warp_mesh(trimesh.load(os.path.join(V15, f"toe_stopper_{p['Toe_Stopper']}.stl")), p, 4.0)
+        parts[f"T1_鞋頭擋塊_{p['Toe_Stopper']}(v17放大)"] = (toe, "T")
     # 走線蓋板
     cov = ext(cover, ZT - p["Cover_T"], p["Cover_T"])
     parts["B2_走線蓋板"] = (cov, "B")
@@ -412,7 +428,7 @@ if __name__ == "__main__":
             tm = as_mesh(w)
             if k.startswith("L1"):
                 continue                       # 小腿件：沿用 v15 原檔，不輸出
-            if code == "F1":                   # 整件腳底件只出 STEP（參考）；列印用分件 F1A / F1B
+            if code == "F1" and P.get("Split", True):   # 分件版：整件只出 STEP（參考），列印用 F1A / F1B
                 write_faceted_step(os.path.join(out, "STEP", base + "_reference_one_piece.step"), [(base, tm)])
                 continue
             ref = k.startswith(("E5", "E6", "C3"))   # 外購件 / 示意件

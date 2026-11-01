@@ -12,12 +12,14 @@ import drawing_lib as dl
 OUT = sys.argv[1] if len(sys.argv) > 1 else os.path.join(os.path.dirname(HERE), "drawings")
 P = A.P
 parts, D = A.build(P, verbose=False)
+dl.TAG = f"AFO v17 {P['Variant_Name']} / 左腳"
 V15 = os.path.join(HERE, "data", "v15")
 f15 = trimesh.load(os.path.join(V15, "AFO_foot.stl"))
 leg = trimesh.load(os.path.join(V15, "AFO_leg.stl"))
 t15 = trimesh.load(os.path.join(V15, "toe_stopper_H22_T9.stl"))
 f17 = A.as_mesh(parts["F1_AFO腳底件_v17"][0])
-t17 = A.as_mesh([w for k, (w, m) in parts.items() if k.startswith("T1")][0])
+_t = [w for k, (w, m) in parts.items() if k.startswith("T1")]
+t17 = A.as_mesh(_t[0]) if _t else None
 cov = A.as_mesh(parts["B2_走線蓋板"][0])
 cart = [A.as_mesh(w) for k, (w, m) in parts.items() if k.startswith(("C0", "C1"))]
 CF15, CF17, CL, CT = (0.86, 0.58, 0.58), (0.55, 0.65, 0.85), (0.80, 0.68, 0.52), (0.95, 0.65, 0.35)
@@ -39,7 +41,7 @@ def panel(rect, items, view, title, scale=2.2, dy=0):
 ax1, lo, hi = panel((14, 205, 190, 75), [(f15, CF15, 1), (t15, CT, 1)], TOP, "v15 修改前（俯視）　288 × 118")
 for x, y, txt in ((60, 0, "舊 FSR 溝槽"), (100, 50, "x≈100 貫穿槽")):
     dl.leader(ax1, (x, y), (x + 60, 72 if y > 20 else -72), txt, fs=6.5, color="#9b2c2c")
-ax2, lo, hi = panel((214, 205, 192, 75), [(f17, CF17, 1), (t17, CT, 1), (cov, (0.3, 0.5, 0.85), 1)] + [(m, (0.4, 0.78, 0.5), 1) for m in cart], TOP,
+ax2, lo, hi = panel((214, 205, 192, 75), [(f17, CF17, 1)] + ([(t17, CT, 1)] if t17 is not None else []) + [(cov, (0.3, 0.5, 0.85), 1)] + [(m, (0.4, 0.78, 0.5), 1) for m in cart], TOP,
                     "v17 修改後（俯視）　%.0f × %.0f" % (f17.bounds[1][0] - f17.bounds[0][0], f17.bounds[1][1] - f17.bounds[0][1]))
 for S, nm in ((D["S1"], "S1 凸環 FSR"), (D["S2"], "S2 凸環 FSR")):
     dl.leader(ax2, S, (S[0] + 30, 72 if nm.startswith("S2") else -74), nm, fs=6.5, color="#1f4f99")
@@ -47,7 +49,7 @@ dl.leader(ax2, (130, -15), (150, 72), "走線槽 + 蓋板", fs=6.5, color="#1f4f
 
 # 中排：側視（含小腿件）
 ax3, lo, hi = panel((14, 112, 190, 88), [(f15, CF15, 1), (leg, CL, 1), (t15, CT, 1)], SIDE, "v15 側視（內側）", 2.6)
-ax4, lo, hi = panel((214, 112, 192, 88), [(f17, CF17, 1), (leg, CL, 1), (t17, CT, 1)] + [(m, (0.4, 0.78, 0.5), 1) for m in cart], SIDE, "v17 側視（內側）　小腿件不變", 2.6)
+ax4, lo, hi = panel((214, 112, 192, 88), [(f17, CF17, 1), (leg, CL, 1), ] + ([(t17, CT, 1)] if t17 is not None else []) + [(m, (0.4, 0.78, 0.5), 1) for m in cart], SIDE, "v17 側視（內側）　小腿件不變", 2.6)
 
 # 下排：疊合俯視
 ax5 = dl.view_axes(fig, (14, 50, 250, 58), 2.7)

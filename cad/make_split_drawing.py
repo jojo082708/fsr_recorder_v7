@@ -12,6 +12,7 @@ from matplotlib.patches import Rectangle, Circle
 OUT = sys.argv[1] if len(sys.argv) > 1 else os.path.join(os.path.dirname(HERE), "drawings")
 P = A.P
 parts, D = A.build(P, verbose=False)
+dl.TAG = f"AFO v17 {P['Variant_Name']} / 左腳"
 SP = D["split"]
 rear = parts["F1A_腳底件後段(分件)"][0]; front = parts["F1B_腳底件前段(分件)"][0]
 cart = [A.as_mesh(w) for k, (w, m) in parts.items() if k.startswith(("C0", "C1"))]

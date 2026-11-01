@@ -29,7 +29,8 @@ def resample(ring, n):
     return [ring.interpolate(t * L).coords[0] for t in np.linspace(0, 1, n, endpoint=False)]
 
 
-meshes = {k: (A.as_mesh(w), m) for k, (w, m) in parts.items() if not k.startswith("F1_")}
+_split = any(k.startswith("F1A") for k in parts)
+meshes = {k: (A.as_mesh(w), m) for k, (w, m) in parts.items() if not (_split and k.startswith("F1_"))}
 # 布鞋（示意）
 inner = D["inner"]
 shoe2d = inner.buffer(-4, join_style=1).intersection(sbox(9.0, -200, P["Sleeve_Inner_X"] + P["Shoe_Length"], 200))

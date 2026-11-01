@@ -71,8 +71,15 @@ dt{color:var(--muted)} dd{margin:0;font-family:var(--f-mono);font-size:12.5px;fo
   <aside>
     <div>
       <h1>AFO v17 足底 FSR 平台</h1>
-      <div class="sub">外穿式布鞋雙點足底力量量測・左腳・草案 B</div>
+      <div class="sub">雙點足底力量量測・左腳・草案 B・兩個版本</div>
     </div>
+    <section>
+      <h2>版本</h2>
+      <div class="seg" role="group" aria-label="版本">
+        <button id="var-shoe" aria-pressed="true">穿鞋版（鞋底 310×110）</button>
+        <button id="var-barefoot">赤腳版（腳掌 254×100）</button>
+      </div>
+    </section>
     <section>
       <h2>爆炸拆解</h2>
       <div class="row"><input id="explode" type="range" min="0" max="1" step="0.01" value="0" aria-label="爆炸程度"><span class="val" id="explode-v">0%</span></div>
@@ -102,9 +109,9 @@ dt{color:var(--muted)} dd{margin:0;font-family:var(--f-mono);font-size:12.5px;fo
     <section>
       <h2>待確認</h2>
       <ul class="todo">
-        <li>鞋跟寬須 ≤ 66（小腿件套筒內寬）</li>
+        <li>穿鞋版：鞋跟寬須 ≤ 66（小腿件套筒內寬）</li>
         <li>S2 距腳跟 21 或 25</li>
-        <li>Heel_Offset（腳跟→鞋底後緣）暫定 12</li>
+        <li>穿鞋版 Heel_Offset（腳跟→鞋底後緣）暫定 12</li>
         <li>電源方式</li>
       </ul>
     </section>
@@ -119,7 +126,8 @@ import * as THREE from "three";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 
-const META = {"parts":[{"node":"n0","name":"F1_AFO腳底件_v17","group":"腳底件","explode":[0,0,0],"size":[346.4,133.7,76.0]},{"node":"n1","name":"L1_AFO小腿件_v15(不改)","group":"小腿件","explode":[-70,0,130],"size":[69.1,98.2,239.2]},{"node":"n2","name":"T1_鞋頭擋塊_H22_T9(v17放大)","group":"鞋頭擋塊","explode":[70,0,50],"size":[55.1,105.7,30.0]},{"node":"n3","name":"B2_走線蓋板","group":"走線蓋板","explode":[0,0,30],"size":[172.1,36.0,1.5]},{"node":"n4","name":"C0-1_感測匣殼","group":"FSR 感測匣","explode":[0,0,108],"size":[42.0,42.0,11.8]},{"node":"n5","name":"C4-1_FSR支撐座","group":"FSR 感測匣","explode":[0,0,40],"size":[22.0,22.0,1.5]},{"node":"n6","name":"C3-1_FSR402","group":"FSR 感測匣","explode":[0,0,52],"size":[35.1,18.3,0.5]},{"node":"n7","name":"C5-1_保護傳力片","group":"FSR 感測匣","explode":[0,0,62],"size":[10.0,10.0,0.5]},{"node":"n8","name":"C2-1_鋼珠Ø5","group":"FSR 感測匣","explode":[0,0,72],"size":[5.0,5.0,5.0]},{"node":"n9","name":"C1-1_TPU導槽","group":"FSR 感測匣","explode":[0,0,86],"size":[22.0,22.0,8.8]},{"node":"n10","name":"C0-2_感測匣殼","group":"FSR 感測匣","explode":[0,0,108],"size":[42.0,42.0,11.8]},{"node":"n11","name":"C4-2_FSR支撐座","group":"FSR 感測匣","explode":[0,0,40],"size":[22.0,22.0,1.5]},{"node":"n12","name":"C3-2_FSR402","group":"FSR 感測匣","explode":[0,0,52],"size":[34.0,24.4,0.5]},{"node":"n13","name":"C5-2_保護傳力片","group":"FSR 感測匣","explode":[0,0,62],"size":[10.0,10.0,0.5]},{"node":"n14","name":"C2-2_鋼珠Ø5","group":"FSR 感測匣","explode":[0,0,72],"size":[5.0,5.0,5.0]},{"node":"n15","name":"C1-2_TPU導槽","group":"FSR 感測匣","explode":[0,0,86],"size":[22.0,22.0,8.8]},{"node":"n16","name":"E5_長條麵包板(示意)","group":"電子（示意）","explode":[-95,0,130],"size":[9.5,55.0,165.0]},{"node":"n17","name":"E6_ESP32(示意)","group":"電子（示意）","explode":[-95,0,130],"size":[13.0,28.3,51.5]},{"node":"n18","name":"布鞋鞋底(示意)","group":"布鞋（示意）","explode":[0,0,210],"size":[309.3,106.9,30.0]},{"node":"n19","name":"布鞋鞋面(示意)","group":"布鞋（示意）","explode":[0,0,210],"size":[303.3,100.8,68.0]},{"node":"n20","name":"A4_前掌魔鬼氈","group":"魔鬼氈","explode":[0,0,160],"size":[38.0,125.1,50.0]},{"node":"n21","name":"A4_中足魔鬼氈","group":"魔鬼氈","explode":[0,0,160],"size":[38.0,131.5,64.1]},{"node":"n22","name":"FSR 線(示意)","group":"電子（示意）","explode":[-80,0,60],"size":[17.3,21.9,75.0]}],"S1":[197.3,-25.0],"S2":[45.3,12.0],"warp":[80.0,1.286,1.133,50.0],"foot_size":[346.4,133.7,76.0],"shoe":[310.0,110.0]};
+const META_ALL = {"shoe":{"parts":[{"node":"n0","name":"F1A_腳底件後段(分件)","group":"腳底件","explode":[0,0,0],"size":[138.8,124.6,76.0]},{"node":"n1","name":"F1B_腳底件前段(分件)","group":"腳底件","explode":[60,0,0],"size":[237.4,133.7,39.0]},{"node":"n2","name":"L1_AFO小腿件_v15(不改)","group":"小腿件","explode":[-70,0,130],"size":[69.1,98.2,239.2]},{"node":"n3","name":"T1_鞋頭擋塊_H22_T9(v17放大)","group":"鞋頭擋塊","explode":[130,0,50],"size":[55.1,105.7,30.0]},{"node":"n4","name":"B2_走線蓋板","group":"走線蓋板","explode":[0,0,30],"size":[172.1,36.0,1.5]},{"node":"n5","name":"C0-1_感測匣殼","group":"FSR 感測匣","explode":[0,0,108],"size":[42.0,42.0,14.8]},{"node":"n6","name":"C4-1_FSR支撐座","group":"FSR 感測匣","explode":[0,0,40],"size":[22.0,22.0,1.5]},{"node":"n7","name":"C3-1_FSR402","group":"FSR 感測匣","explode":[0,0,52],"size":[35.1,18.3,0.5]},{"node":"n8","name":"C5-1_保護傳力片","group":"FSR 感測匣","explode":[0,0,62],"size":[10.0,10.0,0.5]},{"node":"n9","name":"C2-1_鋼珠Ø5","group":"FSR 感測匣","explode":[0,0,72],"size":[5.0,5.0,5.0]},{"node":"n10","name":"C1-1_TPU導槽","group":"FSR 感測匣","explode":[0,0,86],"size":[22.0,22.0,11.8]},{"node":"n11","name":"C0-2_感測匣殼","group":"FSR 感測匣","explode":[0,0,108],"size":[42.0,42.0,14.8]},{"node":"n12","name":"C4-2_FSR支撐座","group":"FSR 感測匣","explode":[0,0,40],"size":[22.0,22.0,1.5]},{"node":"n13","name":"C3-2_FSR402","group":"FSR 感測匣","explode":[0,0,52],"size":[34.0,24.4,0.5]},{"node":"n14","name":"C5-2_保護傳力片","group":"FSR 感測匣","explode":[0,0,62],"size":[10.0,10.0,0.5]},{"node":"n15","name":"C2-2_鋼珠Ø5","group":"FSR 感測匣","explode":[0,0,72],"size":[5.0,5.0,5.0]},{"node":"n16","name":"C1-2_TPU導槽","group":"FSR 感測匣","explode":[0,0,86],"size":[22.0,22.0,11.8]},{"node":"n17","name":"E5_長條麵包板(示意)","group":"電子（示意）","explode":[-95,0,130],"size":[9.5,55.0,165.0]},{"node":"n18","name":"E6_ESP32(示意)","group":"電子（示意）","explode":[-95,0,130],"size":[13.0,28.3,51.5]},{"node":"n19","name":"布鞋鞋底(示意)","group":"布鞋（示意）","explode":[0,0,210],"size":[309.3,106.9,30.0]},{"node":"n20","name":"布鞋鞋面(示意)","group":"布鞋（示意）","explode":[0,0,210],"size":[303.3,100.8,68.0]},{"node":"n21","name":"A4_前掌魔鬼氈","group":"魔鬼氈","explode":[0,0,160],"size":[38.0,125.1,50.0]},{"node":"n22","name":"A4_中足魔鬼氈","group":"魔鬼氈","explode":[0,0,160],"size":[38.0,131.5,64.1]},{"node":"n23","name":"FSR 線(示意)","group":"電子（示意）","explode":[-80,0,60],"size":[17.3,21.9,75.0]}],"S1":[197.3,-25.0],"S2":[45.3,12.0],"warp":[80.0,1.286,1.133,50.0],"foot_size":[346.4,133.7,76.0],"shoe":[310.0,110.0]},"barefoot":{"parts":[{"node":"n0","name":"F1_AFO腳底件_v17","group":"腳底件","explode":[0,0,0],"size":[285.2,122.0,76.0]},{"node":"n1","name":"L1_AFO小腿件_v15(不改)","group":"小腿件","explode":[-70,0,130],"size":[69.1,98.2,239.2]},{"node":"n2","name":"B2_走線蓋板","group":"走線蓋板","explode":[0,0,30],"size":[160.1,34.0,1.5]},{"node":"n3","name":"C0-1_感測匣殼","group":"FSR 感測匣","explode":[0,0,108],"size":[42.0,42.0,14.8]},{"node":"n4","name":"C4-1_FSR支撐座","group":"FSR 感測匣","explode":[0,0,40],"size":[22.0,22.0,1.5]},{"node":"n5","name":"C3-1_FSR402","group":"FSR 感測匣","explode":[0,0,52],"size":[35.1,18.3,0.5]},{"node":"n6","name":"C5-1_保護傳力片","group":"FSR 感測匣","explode":[0,0,62],"size":[10.0,10.0,0.5]},{"node":"n7","name":"C2-1_鋼珠Ø5","group":"FSR 感測匣","explode":[0,0,72],"size":[5.0,5.0,5.0]},{"node":"n8","name":"C1-1_TPU導槽","group":"FSR 感測匣","explode":[0,0,86],"size":[22.0,22.0,11.8]},{"node":"n9","name":"C0-2_感測匣殼","group":"FSR 感測匣","explode":[0,0,108],"size":[42.0,42.0,14.8]},{"node":"n10","name":"C4-2_FSR支撐座","group":"FSR 感測匣","explode":[0,0,40],"size":[22.0,22.0,1.5]},{"node":"n11","name":"C3-2_FSR402","group":"FSR 感測匣","explode":[0,0,52],"size":[29.7,30.7,0.5]},{"node":"n12","name":"C5-2_保護傳力片","group":"FSR 感測匣","explode":[0,0,62],"size":[10.0,10.0,0.5]},{"node":"n13","name":"C2-2_鋼珠Ø5","group":"FSR 感測匣","explode":[0,0,72],"size":[5.0,5.0,5.0]},{"node":"n14","name":"C1-2_TPU導槽","group":"FSR 感測匣","explode":[0,0,86],"size":[22.0,22.0,11.8]},{"node":"n15","name":"E5_長條麵包板(示意)","group":"電子（示意）","explode":[-95,0,130],"size":[9.5,55.0,165.0]},{"node":"n16","name":"E6_ESP32(示意)","group":"電子（示意）","explode":[-95,0,130],"size":[13.0,28.3,51.5]},{"node":"n17","name":"布鞋鞋底(示意)","group":"布鞋（示意）","explode":[0,0,210],"size":[253.3,96.9,30.0]},{"node":"n18","name":"布鞋鞋面(示意)","group":"布鞋（示意）","explode":[0,0,210],"size":[247.3,90.7,68.0]},{"node":"n19","name":"A4_前掌魔鬼氈","group":"魔鬼氈","explode":[0,0,160],"size":[38.0,115.6,50.0]},{"node":"n20","name":"A4_中足魔鬼氈","group":"魔鬼氈","explode":[0,0,160],"size":[38.0,122.3,64.1]},{"node":"n21","name":"FSR 線(示意)","group":"電子（示意）","explode":[-80,0,60],"size":[17.3,21.9,75.0]}],"S1":[185.3,-25.0],"S2":[33.3,12.0],"warp":[80.0,0.987,1.034,50.0],"foot_size":[285.2,122.0,76.0],"shoe":[254.0,100.0]}};
+let META = META_ALL.shoe;
 const GROUP_ORDER = ["腳底件","FSR 感測匣","走線蓋板","鞋頭擋塊","小腿件","電子（示意）","魔鬼氈","布鞋（示意）"];
 const HIDDEN_AT_START = new Set(["布鞋（示意）","魔鬼氈"]);
 
@@ -138,7 +146,7 @@ const fill = new THREE.DirectionalLight(0xffffff, 0.6); fill.position.set(-400, 
 // 模型座標 Z 朝上 → three.js Y 朝上
 const root = new THREE.Group(); root.rotation.x = -Math.PI / 2; scene.add(root);
 const clip = new THREE.Plane(new THREE.Vector3(-1, 0, 0), 1e5);
-const info = Object.fromEntries(META.parts.map(p => [p.node, p]));
+let info = {};
 const nodes = []; let explodeT = 0;
 const target = new THREE.Vector3(150, 105, 0);  // three 座標
 
@@ -162,46 +170,64 @@ function resize() {
 new ResizeObserver(resize).observe(canvas.parentElement);
 
 const status = document.getElementById("status");
-fetch("model-glb.txt").then(r => { if (!r.ok) throw new Error(r.status); return r.text(); }).then(b64 => {
-  const bin = Uint8Array.from(atob(b64.trim()), c => c.charCodeAt(0));
-  return new Promise((res, rej) => new GLTFLoader().parse(bin.buffer, "", res, rej));
-}).then(gltf => {
-  const groups = {};
-  const found = [];
-  gltf.scene.updateMatrixWorld(true);
-  gltf.scene.traverse(o => { if (o.isMesh) found.push(o); });
-  for (const o of found) {
-    let n = o; while (n && !info[n.name]) n = n.parent;
-    const meta = n ? info[n.name] : null;
-    if (!meta) continue;
-    o.geometry.applyMatrix4(o.matrixWorld);
-    o.position.set(0, 0, 0); o.rotation.set(0, 0, 0); o.scale.set(1, 1, 1);
-    const mat = o.material.clone(); mat.side = THREE.DoubleSide; mat.clippingPlanes = [clip];
-    if (meta.group === "布鞋（示意）") { mat.transparent = true; mat.opacity = 0.45; mat.depthWrite = false; }
-    o.material = mat;
-    const edges = new THREE.LineSegments(new THREE.EdgesGeometry(o.geometry, 30),
-      new THREE.LineBasicMaterial({ color: 0x1b232c, transparent: true, opacity: 0.55, clippingPlanes: [clip] }));
-    o.add(edges); o.userData.meta = meta;
-    const holder = new THREE.Group(); holder.add(o); root.add(holder);
-    holder.userData = { meta, ex: new THREE.Vector3(...meta.explode) };
-    nodes.push(holder);
-    (groups[meta.group] ||= []).push(holder);
-  }
-  const layers = document.getElementById("layers");
-  for (const g of GROUP_ORDER) {
-    if (!groups[g]) continue;
-    const col = groups[g][0].children[0].material.color.getHexString();
-    const id = "g-" + GROUP_ORDER.indexOf(g);
-    const lab = document.createElement("label");
-    lab.innerHTML = '<input type="checkbox" id="' + id + '"' + (HIDDEN_AT_START.has(g) ? "" : " checked") + '><span class="sw" style="background:#' + col + '"></span>' + g + '<span class="cnt">' + groups[g].length + '</span>';
-    layers.appendChild(lab);
-    const cb = lab.querySelector("input");
-    const apply = () => groups[g].forEach(h => h.visible = cb.checked);
-    cb.addEventListener("change", apply); apply();
-  }
-  status.hidden = true;
-  frame(VIEWS.iso);
-}).catch(() => { status.textContent = "模型載入失敗，請重新整理頁面"; });
+const layers = document.getElementById("layers");
+const cache = {};
+function fetchModel(v) {
+  return cache[v] ||= fetch("model-" + v + "-glb.txt").then(r => { if (!r.ok) throw new Error(r.status); return r.text(); }).then(b64 => {
+    const bin = Uint8Array.from(atob(b64.trim()), c => c.charCodeAt(0));
+    return new Promise((res, rej) => new GLTFLoader().parse(bin.buffer, "", res, rej));
+  });
+}
+function loadVariant(v) {
+  META = META_ALL[v];
+  info = Object.fromEntries(META.parts.map(p => [p.node, p]));
+  status.textContent = "載入模型中…"; status.hidden = false;
+  ["shoe", "barefoot"].forEach(k => document.getElementById("var-" + k).setAttribute("aria-pressed", String(k === v)));
+  return fetchModel(v).then(gltf0 => {
+    const gltf = { scene: gltf0.scene.clone(true) };
+    nodes.splice(0).forEach(h => root.remove(h));
+    layers.innerHTML = "";
+    const groups = {};
+    const found = [];
+    gltf.scene.updateMatrixWorld(true);
+    gltf.scene.traverse(o => { if (o.isMesh) found.push(o); });
+    for (const o of found) {
+      let n = o; while (n && !info[n.name]) n = n.parent;
+      const meta = n ? info[n.name] : null;
+      if (!meta) continue;
+      o.geometry = o.geometry.clone();
+      o.geometry.applyMatrix4(o.matrixWorld);
+      o.position.set(0, 0, 0); o.rotation.set(0, 0, 0); o.scale.set(1, 1, 1);
+      const mat = o.material.clone(); mat.side = THREE.DoubleSide; mat.clippingPlanes = [clip];
+      if (meta.group === "布鞋（示意）") { mat.transparent = true; mat.opacity = 0.45; mat.depthWrite = false; }
+      o.material = mat;
+      const edges = new THREE.LineSegments(new THREE.EdgesGeometry(o.geometry, 30),
+        new THREE.LineBasicMaterial({ color: 0x1b232c, transparent: true, opacity: 0.55, clippingPlanes: [clip] }));
+      edges.visible = document.getElementById("edges").checked;
+      o.add(edges); o.userData.meta = meta;
+      const holder = new THREE.Group(); holder.add(o); root.add(holder);
+      holder.userData = { meta, ex: new THREE.Vector3(...meta.explode) };
+      holder.position.copy(holder.userData.ex).multiplyScalar(explodeT);
+      nodes.push(holder);
+      (groups[meta.group] ||= []).push(holder);
+    }
+    for (const g of GROUP_ORDER) {
+      if (!groups[g]) continue;
+      const col = groups[g][0].children[0].material.color.getHexString();
+      const id = "g-" + GROUP_ORDER.indexOf(g);
+      const lab = document.createElement("label");
+      lab.innerHTML = '<input type="checkbox" id="' + id + '"' + (HIDDEN_AT_START.has(g) ? "" : " checked") + '><span class="sw" style="background:#' + col + '"></span>' + (v === "barefoot" && g === "布鞋（示意）" ? "腳（示意）" : g) + '<span class="cnt">' + groups[g].length + '</span>';
+      layers.appendChild(lab);
+      const cb = lab.querySelector("input");
+      const apply = () => groups[g].forEach(h => h.visible = cb.checked);
+      cb.addEventListener("change", apply); apply();
+    }
+    renderDims(v);
+    status.hidden = true;
+  }).catch(() => { status.textContent = "模型載入失敗，請重新整理頁面"; });
+}
+document.getElementById("var-shoe").addEventListener("click", () => loadVariant("shoe"));
+document.getElementById("var-barefoot").addEventListener("click", () => loadVariant("barefoot"));
 
 // 爆炸
 const ex = document.getElementById("explode"), exv = document.getElementById("explode-v");
@@ -240,12 +266,16 @@ canvas.addEventListener("pointerup", e => {
 });
 
 // 尺寸
-const fs = META.foot_size;
-const rows = [["布鞋（量測）", META.shoe[0] + " × " + META.shoe[1]], ["腳底件外形", fs[0] + " × " + fs[1] + " × " + fs[2]],
-  ["托盤放大（x>80）", "長 ×" + META.warp[1] + "、寬 ×" + META.warp[2]], ["底板面高度", "15"],
-  ["S1 大拇趾球 (X, Y)", META.S1[0] + ", " + META.S1[1]], ["S2 腳跟 (X, Y)", META.S2[0] + ", +" + META.S2[1]],
-  ["感測匣凸環", "Ø42，高出底板 3（固定）"], ["鋼珠", "Ø5"], ["FSR 最大受力（估）", "≈ 69 N"]];
-document.getElementById("dims").innerHTML = rows.map(r => "<dt>" + r[0] + "</dt><dd>" + r[1] + "</dd>").join("");
+function renderDims(v) {
+  const fs = META.foot_size;
+  const rows = [[v === "shoe" ? "布鞋鞋底（量測）" : "腳掌（量測）", META.shoe[0] + " × " + META.shoe[1]], ["腳底件外形", fs[0] + " × " + fs[1] + " × " + fs[2]],
+    ["列印", v === "shoe" ? "兩件 + 6 × M4 螺絲" : "一件"], ["鞋頭擋塊", v === "shoe" ? "有" : "無（前牆限位）"],
+    ["托盤調整（x>80）", "長 ×" + META.warp[1] + "、寬 ×" + META.warp[2]], ["底板面高度", "15"],
+    ["S1 大拇趾球 (X, Y)", META.S1[0] + ", " + META.S1[1]], ["S2 腳跟 (X, Y)", META.S2[0] + ", +" + META.S2[1]],
+    ["感測匣凸環", "Ø42，高出底板 3（固定）"], ["FSR 最大受力（估）", "≈ 69 N"]];
+  document.getElementById("dims").innerHTML = rows.map(r => "<dt>" + r[0] + "</dt><dd>" + r[1] + "</dd>").join("");
+}
+loadVariant("shoe").then(() => frame(VIEWS.iso));
 
 (function loop() { requestAnimationFrame(loop); controls.update(); renderer.render(scene, camera); })();
 </script>
