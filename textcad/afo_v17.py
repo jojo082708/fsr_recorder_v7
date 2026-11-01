@@ -14,7 +14,8 @@ HERE = Path(__file__).resolve().parent
 STEP = next(p for p in (HERE / "../STEP", HERE / "../out/STEP") if p.exists())   # 輸出包 / repo 兩種位置
 
 PARTS = [
-    ("F1_AFO_foot_v17", "#94a8cc"),        # 腳底件 v17（凸環感測匣固定位置）
+    ("F1A_AFO_foot_rear", "#e8a070"),      # 腳底件後段（分件，x < 120 + 搭接）
+    ("F1B_AFO_foot_front", "#94a8cc"),     # 腳底件前段（分件）
     ("T1_toe_stopper", "#f29e47"),         # 鞋頭擋塊
     ("B2_wire_cover", "#4d80d9"),          # 走線蓋板
     ("C0_cartridge_housing_1", "#99d18c"), # S1 感測匣殼（Ø42 凸環，高出底板 3）
@@ -42,7 +43,7 @@ def part(name, color):
 @model
 def afo_v17_sensors():
     """只有感測匣與走線蓋板（較輕，方便檢視）"""
-    return bd.Compound(children=[part(n, c) for n, c in PARTS if not n.startswith(("F1", "T1"))], label="afo_v17_sensors")
+    return bd.Compound(children=[part(n, c) for n, c in PARTS if not n.startswith(("F1A", "F1B", "T1"))], label="afo_v17_sensors")
 
 
 @model

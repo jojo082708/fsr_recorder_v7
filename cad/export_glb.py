@@ -29,7 +29,7 @@ def resample(ring, n):
     return [ring.interpolate(t * L).coords[0] for t in np.linspace(0, 1, n, endpoint=False)]
 
 
-meshes = {k: (A.as_mesh(w), m) for k, (w, m) in parts.items()}
+meshes = {k: (A.as_mesh(w), m) for k, (w, m) in parts.items() if not k.startswith("F1_")}
 # 布鞋（示意）
 inner = D["inner"]
 shoe2d = inner.buffer(-4, join_style=1).intersection(sbox(9.0, -200, P["Sleeve_Inner_X"] + P["Shoe_Length"], 200))
@@ -59,6 +59,8 @@ meshes["FSR 線(示意)"] = (trimesh.util.concatenate([trimesh.creation.cylinder
 
 
 def explode(name):
+    if name.startswith("F1B"): return [60, 0, 0]
+    if name.startswith("T1"): return [130, 0, 50]
     if name.startswith("C"):
         return [0, 0, {"C4": 40, "C3": 52, "C5": 62, "C2": 72, "C1": 86, "C0": 108}[name[:2]]]
     if name.startswith("B2"): return [0, 0, 30]
@@ -91,7 +93,7 @@ for name, (m, mod) in meshes.items():
 out = sys.argv[1] if len(sys.argv) > 1 else "model.glb"
 scene.export(out)
 info = dict(parts=meta, S1=D["S1"], S2=D["S2"], warp=[round(v, 3) for v in D["warp"]],
-            foot_size=[round(float(v), 1) for v in (meshes["F1_AFO腳底件_v17"][0].bounds[1] - meshes["F1_AFO腳底件_v17"][0].bounds[0])],
+            foot_size=[round(float(v), 1) for v in (A.as_mesh(parts["F1_AFO腳底件_v17"][0]).bounds[1] - A.as_mesh(parts["F1_AFO腳底件_v17"][0]).bounds[0])],
             shoe=[P["Shoe_Length"], P["Shoe_Max_Width"]])
 json.dump(info, open(os.path.splitext(out)[0] + ".json", "w"), ensure_ascii=False, indent=1)
 print(out, os.path.getsize(out) // 1024, "KB", len(meta), "parts")

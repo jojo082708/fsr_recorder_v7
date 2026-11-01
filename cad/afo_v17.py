@@ -55,6 +55,9 @@ P = dict(
     # 走線
     Wire_W=6.0, Wire_Bottom=10.0, Cover_W=9.0, Cover_T=1.5, Exit_D=5.0,
     Toe_Stopper="H22_T9",
+    # 分件（印表機 300 × 300 × 350）：x = Split_X 處搭接，M4 平頭螺絲由底面鎖入後段的熱熔螺母
+    Split_X=120.0, Lap_L=30.0, Lap_Z=7.0, Split_Gap=0.15,
+    Split_Screw_Y=(-42.0, -2.0, 38.0), Split_Screw_DX=(-7.5, 7.5),
 )
 
 
@@ -252,6 +255,10 @@ def build(p=P, verbose=True):
     for S in (S1, S2):
         F = F + cq_to_manifold(cyl(S[0], S[1], 0.0, p["Insert_D"] + 4, ZT - 0.01))
 
+    # 2b) 分件搭接區實心化（底部格柵在接合處補實）
+    xs0, xs1 = p["Split_X"] - p["Lap_L"] / 2 - 6, p["Split_X"] + p["Lap_L"] / 2 + 6
+    F = F + cq_to_manifold(ext(outer.buffer(-1.0).intersection(sbox(xs0, -200, xs1, 200)), 0.0, ZT - 0.01))
+
     # 3) 感測匣口袋 + 嵌板沉台 + 熱熔螺母
     cut = None
     def add(w):
@@ -284,6 +291,9 @@ def build(p=P, verbose=True):
 
     parts = {}
     parts["F1_AFO腳底件_v17"] = (foot_new, "F")
+    rear, front = split_foot(F, p, d)
+    parts["F1A_腳底件後段(分件)"] = (rear, "F")
+    parts["F1B_腳底件前段(分件)"] = (front, "F")
     leg = trimesh.load(os.path.join(V15, "AFO_leg.stl"))
     parts["L1_AFO小腿件_v15(不改)"] = (leg, "L")
     toe = warp_mesh(trimesh.load(os.path.join(V15, f"toe_stopper_{p['Toe_Stopper']}.stl")), p, 4.0)
@@ -302,6 +312,30 @@ def build(p=P, verbose=True):
     if verbose:
         print("S1", S1, "S2", S2, "wall_gap_top", round(wall_top, 1))
     return parts, d
+
+
+def split_foot(F, p, d):
+    """腳底件拆成後段 / 前段：底板搭接（後段在上層、前段在下層），牆在 Split_X 對接；回傳 (rear, front) trimesh"""
+    Xc, L, Zl, g = p["Split_X"], p["Lap_L"], p["Lap_Z"], p["Split_Gap"]
+    Xa, Xb = Xc - L / 2, Xc + L / 2
+    ZT = d["ZT"]
+    big = lambda x0, x1, z0, z1: cq_to_manifold(boxc(x0, x1, -300, 300, z0, z1))
+    R = big(-100, Xa, -10, 300) + big(Xa, Xb, Zl, ZT) + big(Xa, Xc, ZT - 0.01, 300)
+    Rs = big(-100, Xa - g, -10, 300) + big(Xa - g, Xb - g, Zl + g, ZT) + big(Xa - g, Xc - g, ZT - 0.01, 300)
+    rear = F ^ Rs
+    front = F - R
+    holes_f = None; holes_r = None
+    for dx in p["Split_Screw_DX"]:
+        for y in p["Split_Screw_Y"]:
+            x = Xc + dx
+            hf = cyl(x, y, -1, 4.5, Zl + 1.5).union(cq.Workplane("XY").add(cq.Solid.makeCone(4.3, 2.0, 2.3, cq.Vector(x, y, -0.01), cq.Vector(0, 0, 1))))
+            hr = cyl(x, y, Zl - 0.5, 5.6, 6.0)          # M4 熱熔螺母 Ø5.6 × 5
+            holes_f = hf if holes_f is None else holes_f.union(hf)
+            holes_r = hr if holes_r is None else holes_r.union(hr)
+    rear = rear - cq_to_manifold(holes_r)
+    front = front - cq_to_manifold(holes_f)
+    d["split"] = dict(Xa=Xa, Xb=Xb, Xc=Xc, screws=[(Xc + dx, y) for dx in p["Split_Screw_DX"] for y in p["Split_Screw_Y"]])
+    return to_trimesh(rear), to_trimesh(front)
 
 
 def as_mesh(w):
@@ -357,7 +391,7 @@ def write_faceted_step(path, named_meshes):
         fh.write("\n".join(L)); fh.write("\nENDSEC;\nEND-ISO-10303-21;\n")
 
 
-ASCII = {"F1": "F1_AFO_foot_v17", "L1": "L1_AFO_leg_v15", "T1": "T1_toe_stopper", "B2": "B2_wire_cover",
+ASCII = {"F1A": "F1A_AFO_foot_rear", "F1B": "F1B_AFO_foot_front", "F1": "F1_AFO_foot_v17", "L1": "L1_AFO_leg_v15", "T1": "T1_toe_stopper", "B2": "B2_wire_cover",
          "C0": "C0_cartridge_housing", "C1": "C1_TPU_guide", "C2": "C2_steel_ball_5mm", "C3": "C3_FSR402_ref",
          "C4": "C4_FSR_seat", "C5": "C5_shield_disc", "E5": "E5_breadboard_ref", "E6": "E6_ESP32_ref"}
 
@@ -378,6 +412,9 @@ if __name__ == "__main__":
             tm = as_mesh(w)
             if k.startswith("L1"):
                 continue                       # 小腿件：沿用 v15 原檔，不輸出
+            if code == "F1":                   # 整件腳底件只出 STEP（參考）；列印用分件 F1A / F1B
+                write_faceted_step(os.path.join(out, "STEP", base + "_reference_one_piece.step"), [(base, tm)])
+                continue
             ref = k.startswith(("E5", "E6", "C3"))   # 外購件 / 示意件
             if not ref:
                 tm.export(os.path.join(out, "STL", base + ".stl"))
