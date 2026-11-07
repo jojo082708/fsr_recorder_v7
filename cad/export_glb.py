@@ -61,6 +61,7 @@ meshes["FSR 線(示意)"] = (trimesh.util.concatenate([trimesh.creation.cylinder
 
 def explode(name):
     if name.startswith("F1B"): return [60, 0, 0]
+    if name.startswith("H1"): return [-30, 0, 70]
     if name.startswith("T1"): return [130, 0, 50]
     if name.startswith("C"):
         return [0, 0, {"C4": 40, "C3": 52, "C5": 62, "C2": 72, "C1": 86, "C0": 108}[name[:2]]]

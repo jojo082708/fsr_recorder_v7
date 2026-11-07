@@ -16,13 +16,15 @@ import drawing_lib as dl
 OUT = sys.argv[1] if len(sys.argv) > 1 else os.path.join(os.path.dirname(HERE), "drawings")
 P = A.P
 parts, D = A.build(P, verbose=False)
-BARE = P["Heel_Offset"] == 0 and not P.get("Split", True)
+BARE = bool(P.get("Heel_Spacer"))
 dl.TAG = f"AFO v17 {P['Variant_Name']} / 左腳"
 ZT = D["ZT"]; S1, S2 = D["S1"], D["S2"]
 X0 = P["Sleeve_Inner_X"] + P["Heel_Offset"]          # 腳跟後緣在托盤上的 X
 foot = A.as_mesh(parts["F1_AFO腳底件_v17"][0])
 _t = [w for k, (w, m) in parts.items() if k.startswith("T1")]
 toe = A.as_mesh(_t[0]) if _t else None
+_h = [w for k, (w, m) in parts.items() if k.startswith("H1")]
+heel_sp = A.as_mesh(_h[0]) if _h else None
 cart = [A.as_mesh(w) for k, (w, m) in parts.items() if k.startswith(("C0", "C1"))]
 cover = A.as_mesh(parts["B2_走線蓋板"][0])
 
@@ -36,7 +38,7 @@ fig, bg = dl.new_sheet(13, "腳印 × 鞋型 × 托盤 重合俯視圖", "比例
                         f"橘色虛線 = {'腳掌外形' if BARE else '布鞋鞋底'} {P['Shoe_Length']:.0f} × {P['Shoe_Max_Width']:.0f}（量測值，鞋跟段受小腿件套筒內寬 66.4 限制）；藍灰 = AFO 腳底件 v17 托盤。",
                         "S1 / S2 = 鋼珠式 FSR 感測匣中心（Ø21 TPU 傳力面，Ø42 嵌板）。帶 * 者待確認。"])
 ax = dl.view_axes(fig, (16, 50, 388, 232), 1.25)
-lo, hi = dl.render(ax, [(foot, (0.70, 0.76, 0.86), 1.0)] + ([(toe, (0.95, 0.70, 0.45), 1.0)] if toe is not None else []) + [(cover, (0.55, 0.68, 0.9), 1.0)]
+lo, hi = dl.render(ax, [(foot, (0.70, 0.76, 0.86), 1.0)] + ([(toe, (0.95, 0.70, 0.45), 1.0)] if toe is not None else []) + ([(heel_sp, (0.85, 0.55, 0.75), 1.0)] if heel_sp is not None else []) + [(cover, (0.55, 0.68, 0.9), 1.0)]
                    + [(m, (0.62, 0.84, 0.58), 1.0) for m in cart], (0, 0, -1), (0, 1, 0), lw=0.3)
 dl.set_center(ax, ((lo + hi) / 2) + np.array([0, -4]))
 
@@ -75,7 +77,7 @@ dl.vdim(ax, -33.2, 33.2, 8.3, -12, "套筒內寬 66.4", fs=6.5)
 ax.text(hi[0], foot.bounds[1][1] + 4, "外側 (+Y)", ha="right", fontsize=7.5)
 ax.text(hi[0], foot.bounds[0][1] - 40, "內側 (−Y)", ha="right", fontsize=7.5)
 ax.legend(handles=[Line2D([], [], color="#d62728", lw=6, alpha=0.6, label="腳印（照片）"),
-                   Line2D([], [], color="#e67e22", ls="--", lw=1.4, label=f"{'腳掌' if BARE else '布鞋鞋底'} {P['Shoe_Length']:.0f} × {P['Shoe_Max_Width']:.0f}"),
+                   Line2D([], [], color="#e67e22", ls="--", lw=1.4, label=(f"腳掌 {P['Foot_Scale'][0]:.0f} × {P['Foot_Scale'][1]:.0f}（+12 腳跟墊塊）" if BARE else f"布鞋鞋底 {P['Shoe_Length']:.0f} × {P['Shoe_Max_Width']:.0f}")),
                    Line2D([], [], color="#6c3483", ls=":", label="小腿件套筒內側"),
                    Line2D([], [], color="#0b3d6b", marker="o", ls="", mfc="none", label="FSR 感測位置")],
           loc="upper left", fontsize=7.5, frameon=False)

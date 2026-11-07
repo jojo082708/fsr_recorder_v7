@@ -21,7 +21,7 @@ os.makedirs(OUT, exist_ok=True)
 t0 = time.time()
 P = A.P
 parts, D = A.build(P, verbose=False)
-BARE = not P.get("Split", True) and P["Heel_Offset"] == 0
+BARE = bool(P.get("Heel_Spacer"))
 ITEM = "腳掌" if BARE else "鞋底"
 WEAR = "腳（示意）" if BARE else "布鞋"
 SZ = f"{P['Shoe_Length']:.0f}×{P['Shoe_Max_Width']:.0f}"
@@ -108,7 +108,8 @@ def save(fig, name):
     SH.append(name)
     print("sheet", name, round(time.time() - t0, 1), flush=True)
 
-PLAT = [FOOT, LEG] + TOES + [COVER] + CART_TOP
+HEELS = [k for k in parts if k.startswith("H1")]
+PLAT = [FOOT, LEG] + TOES + HEELS + [COVER] + CART_TOP
 PLAT_EL = PLAT + EL + ["W_FSR線(示意)"]
 fb = M[FOOT].bounds
 LB = M[LEG].bounds
@@ -220,7 +221,7 @@ save(fig, "06_等角圖")
 
 # ================================================================== 07 布鞋 + AFO
 fig, bg = new_sheet(7, f"{WEAR}與平台組合等角圖", f"不依比例（{WEAR}為示意外形）",
-                    (["穿戴：赤腳（可穿襪）放進托盤，腳跟頂住小腿件套筒內面 → 腳尖由 T1 擋塊限位 → 扣前掌、中足魔鬼氈 → 扣小腿束帶。",
+                    (["穿戴：插入 H1 腳跟墊塊 → 赤腳（可穿襪）放進托盤，腳跟頂住墊塊 → 腳尖由 T1 擋塊限位 → 扣前掌、中足魔鬼氈 → 扣小腿束帶。",
                       "Ø42 凸環高出底板 3 mm，直接接觸腳底；建議鋪 3 mm EVA 鞋墊（感測匣處開 Ø44 孔）讓腳底與凸環齊平，感測器仍受力。"] if BARE else None) or ["穿戴：穿好布鞋 → 整隻鞋放進托盤，鞋跟頂住小腿件套筒內面 → 鞋頭由 T1 擋塊定位（鞋長 310）→ 扣前掌、中足魔鬼氈 → 扣小腿束帶。",
                      "不拆解、不開孔、不修改布鞋。鞋底與底板間建議貼 1 mm 止滑矽膠片（感測匣位置開 Ø22 孔）。"])
 ax = fig.add_axes([0.03, 0.16, 0.94, 0.81]); ax.set_aspect("equal"); ax.axis("off")

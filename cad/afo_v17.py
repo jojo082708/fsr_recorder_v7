@@ -39,7 +39,7 @@ P = dict(
     Sleeve_Inner_HalfW=33.2,      # 小腿件套筒內側半寬（腳跟感測匣必須在此範圍內）
     # 布鞋（使用者量測：鞋底長 31 cm、鞋底寬 11 cm，左腳）
     Shoe_Length=310.0, Shoe_Max_Width=110.0, Shoe_Clear=2.0,
-    Warp_X0=80.0,                 # 此 x 以後依鞋子尺寸拉長/加寬；後跟杯（小腿件介面）不動
+    Warp_X0=140.0,                # 此 x 以後依尺寸拉長/加寬（在分件接合處之後）→ 後段（含後跟杯、小腿件介面）所有尺寸共用
     Warp_Blend=50.0,
     Heel_Offset=12.0,             # 待確認：腳跟後緣 → 鞋底後緣
     # 感測匣
@@ -62,17 +62,27 @@ P = dict(
 )
 
 
-# ------------------------------------------------------------------ 兩個版本
+# ------------------------------------------------------------------ 模組化：共用後段 + 可換前段
+# 腳跟位置兩版相同（套筒內面 8.3 + 12）：穿鞋時是鞋跟杯厚，赤腳時插入 12 mm 腳跟墊塊 → 兩組感測器位置相同，後段共用。
+# 前段依「托盤內長 Tray_L（套筒內面 → 前緣，不含間隙）× 寬」產生，可換。
 VARIANTS = {
-    # 穿布鞋：鞋底 310 × 110（量測），腳跟後緣到鞋底後緣 Heel_Offset 待確認；長 346 → 分兩件列印
-    "shoe": dict(Variant_Name="穿鞋版", Shoe_Length=310.0, Shoe_Max_Width=110.0, Heel_Offset=12.0, Split=True,
-                 Toe_Stopper="H22_T9"),
-    # 赤腳：腳掌長 25.4 cm、最寬 10 cm（量測，左腳），腳跟直接頂住小腿件套筒內面；長度 < 300 → 一件列印
-    "barefoot": dict(Variant_Name="赤腳版", Shoe_Length=254.0, Shoe_Max_Width=100.0, Heel_Offset=0.0, Split=False,
-                     Toe_Stopper="custom"),   # 赤腳：客製鞋頭擋塊（內緣沿腳趾輪廓 + 間隙，插腳沿用 v15 H22_T9）
+    "shoe": dict(Variant_Name="穿鞋前段", Shoe_Length=310.0, Shoe_Max_Width=110.0, Heel_Offset=12.0, Split=True,
+                 Toe_Stopper="H22_T9", Heel_Spacer=False),
+    "barefoot": dict(Variant_Name="赤腳前段", Shoe_Length=12.0 + 254.0, Shoe_Max_Width=100.0, Heel_Offset=12.0, Split=True,
+                     Toe_Stopper="custom", Heel_Spacer=True, Foot_Scale=(254.0, 100.0)),
 }
+def custom_variant():
+    """AFO_LEN / AFO_WID（mm）+ AFO_MODE=shoe|barefoot → 任意尺寸前段。赤腳時 AFO_LEN 為腳長（自動加 12 mm 腳跟墊塊）。"""
+    L = float(os.environ.get("AFO_LEN", "300")); W = float(os.environ.get("AFO_WID", "105"))
+    mode = os.environ.get("AFO_MODE", "shoe")
+    if mode == "barefoot":
+        return dict(Variant_Name=f"赤腳前段 {L:.0f}×{W:.0f}", Shoe_Length=12.0 + L, Shoe_Max_Width=W, Heel_Offset=12.0, Split=True,
+                    Toe_Stopper="custom", Heel_Spacer=True, Foot_Scale=(L, W))
+    return dict(Variant_Name=f"穿鞋前段 {L:.0f}×{W:.0f}", Shoe_Length=L, Shoe_Max_Width=W, Heel_Offset=12.0, Split=True,
+                Toe_Stopper="H22_T9", Heel_Spacer=False)
 VARIANT = os.environ.get("AFO_VARIANT", "shoe")
-P.update(VARIANTS[VARIANT])
+P.update(VARIANTS[VARIANT] if VARIANT in VARIANTS else custom_variant())
+P.update(Heel_Spacer_T=12.0, Heel_Spacer_H=40.0, Heel_Spacer_Peg_D=5.0)
 
 
 def derived(p):
@@ -287,6 +297,10 @@ def build(p=P, verbose=True):
         for k in range(3):
             a = math.radians(15 + 120 * k)
             add(cyl(S[0] + r * math.cos(a), S[1] + r * math.sin(a), d["ZB"] - 5, 3.6, 5.2))
+    # 3a) 腳跟墊塊插腳孔（後段共用，所有尺寸都有）
+    crescent, sp_pegs = heel_spacer_shape(p, d)
+    for (x, y) in sp_pegs:
+        add(cyl(x, y, ZT - 6.0, p["Heel_Spacer_Peg_D"] + 0.3, 7.0))
     # 3b) 客製鞋頭擋塊插腳孔
     if p.get("Toe_Stopper") == "custom":
         shell, pegs_xy = toe_shell(p, d)
@@ -318,6 +332,8 @@ def build(p=P, verbose=True):
         parts["F1B_腳底件前段(分件)"] = (front, "F")
     leg = trimesh.load(os.path.join(V15, "AFO_leg.stl"))
     parts["L1_AFO小腿件_v15(不改)"] = (leg, "L")
+    if p.get("Heel_Spacer"):
+        parts["H1_腳跟墊塊(赤腳用)"] = (heel_spacer(p, d), "T")
     if p.get("Toe_Stopper") == "custom":
         parts["T1_鞋頭擋塊_客製(依腳型)"] = (custom_toe_stopper(p, d), "T")
     elif p.get("Toe_Stopper"):
@@ -339,11 +355,49 @@ def build(p=P, verbose=True):
     return parts, d
 
 
+def heel_spacer_shape(p, d):
+    """赤腳用腳跟墊塊：小腿件套筒內側輪廓 − 同輪廓往前平移 Heel_Spacer_T → 等厚月牙；2 支插腳"""
+    if "spacer" in d:
+        return d["spacer"]
+    leg = trimesh.load(os.path.join(V15, "AFO_leg.stl"))
+    seg = trimesh.intersections.mesh_plane(leg, [0, 0, 1], [0, 0, 30.0])
+    from shapely.ops import polygonize
+    lines = unary_union([LineString(q[:, :2]) for q in seg])
+    polys = sorted(polygonize(lines), key=lambda g: -g.area)
+    # 套筒內側 = 包含 (30, 0) 的最小封閉區域 / 或由外輪廓求洞
+    cand = [g for g in polys if g.contains(Point(20, 0))]
+    inner = min(cand, key=lambda g: g.area) if cand else Polygon([(8.3, -33.2), (60, -33.2), (60, 33.2), (8.3, 33.2)])
+    inner = inner.intersection(sbox(-50, -100, 60, 100)).buffer(-0.4)
+    t = p["Heel_Spacer_T"]
+    from shapely import affinity as _aff
+    cres = inner.difference(_aff.translate(inner, t, 0)).intersection(sbox(-50, -100, 45, 100))
+    if hasattr(cres, "geoms"):
+        cres = max(cres.geoms, key=lambda g: g.area)
+    core = cres.buffer(-(p["Heel_Spacer_Peg_D"] / 2 + 1.5))
+    xs, ys = np.meshgrid(np.arange(0, 45, 0.5), np.arange(-40, 40, 0.5))
+    c = np.array([(x, y) for x, y in zip(xs.ravel(), ys.ravel()) if core.contains(Point(x, y)) and abs(y) > 10])
+    pegs = []
+    if len(c):
+        pegs = [tuple(c[np.argmax(c[:, 1])]), tuple(c[np.argmin(c[:, 1])])]
+    d["spacer"] = (cres, pegs)
+    return d["spacer"]
+
+
+def heel_spacer(p, d):
+    cres, pegs = heel_spacer_shape(p, d)
+    ZT = d["ZT"]
+    w = ext(cres.simplify(0.1), ZT, p["Heel_Spacer_H"])
+    for (x, y) in pegs:
+        w = w.union(cyl(x, y, ZT - 5.5, p["Heel_Spacer_Peg_D"], 5.6))
+    return as_mesh(w)
+
+
 def foot_in_tray(p):
     """腳印輪廓依量測腳長 / 腳寬縮放，放到托盤座標（腳跟後緣在 套筒內面 + Heel_Offset）"""
     c = np.loadtxt(os.path.join(HERE, "data", "footprint_outline_mm.csv"), delimiter=",")
-    sx = p["Shoe_Length"] / p["Foot_Length"] if p.get("Heel_Offset", 0) == 0 else 1.0
-    sy = p["Shoe_Max_Width"] / p["Foot_Max_Width"] if p.get("Heel_Offset", 0) == 0 else 1.0
+    fs = p.get("Foot_Scale")
+    sx = fs[0] / p["Foot_Length"] if fs else 1.0
+    sy = fs[1] / p["Foot_Max_Width"] if fs else 1.0
     x0 = p["Sleeve_Inner_X"] + p["Heel_Offset"]
     return Polygon(np.c_[c[:, 0] * sx + x0, c[:, 1] * sy]).buffer(0)
 
@@ -460,7 +514,7 @@ def write_faceted_step(path, named_meshes):
         fh.write("\n".join(L)); fh.write("\nENDSEC;\nEND-ISO-10303-21;\n")
 
 
-ASCII = {"F1A": "F1A_AFO_foot_rear", "F1B": "F1B_AFO_foot_front", "F1": "F1_AFO_foot_v17", "L1": "L1_AFO_leg_v15", "T1": "T1_toe_stopper", "B2": "B2_wire_cover",
+ASCII = {"H1": "H1_heel_spacer_barefoot", "F1A": "F1A_AFO_foot_rear", "F1B": "F1B_AFO_foot_front", "F1": "F1_AFO_foot_v17", "L1": "L1_AFO_leg_v15", "T1": "T1_toe_stopper", "B2": "B2_wire_cover",
          "C0": "C0_cartridge_housing", "C1": "C1_TPU_guide", "C2": "C2_steel_ball_5mm", "C3": "C3_FSR402_ref",
          "C4": "C4_FSR_seat", "C5": "C5_shield_disc", "E5": "E5_breadboard_ref", "E6": "E6_ESP32_ref"}
 
