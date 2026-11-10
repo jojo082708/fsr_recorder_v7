@@ -1,0 +1,86 @@
+<!doctype html><html><head><meta charset="utf-8">
+<style>
+html,body{margin:0;height:100%;overflow:hidden;font-family:"WenQuanYi Zen Hei",sans-serif}
+body{background:linear-gradient(180deg,#c9d6e3 0%,#eef2f6 55%,#ffffff 100%)}
+#c{position:absolute;inset:0;width:100%;height:100%}
+#title{position:absolute;left:28px;top:20px;font-size:26px;font-weight:bold;color:#1e2a4a}
+#sub{position:absolute;left:28px;top:58px;font-size:16px;color:#3d4b63}
+#step{position:absolute;left:28px;bottom:26px;font-size:22px;color:#fff;background:rgba(30,42,74,.85);padding:8px 16px;border-radius:6px}
+#tri{position:absolute;right:28px;bottom:22px;font-size:14px;color:#3d4b63}
+</style></head><body>
+<canvas id="c"></canvas>
+<div id="title">AFO v17 外穿式 FSR 雙點足底力量量測平台</div>
+<div id="sub">爆炸圖（穿鞋前段 310×110）</div>
+<div id="step">組裝狀態</div>
+<div id="tri">國立聯合大學 機械工程學系 電控組</div>
+<script>window.META={"parts": [{"node": "n0", "name": "F1A_腳底件後段(分件)", "group": "腳底件", "explode": [0, 0, 0], "size": [138.8, 112.3, 76.0]}, {"node": "n1", "name": "F1B_腳底件前段(分件)", "group": "腳底件", "explode": [60, 0, 0], "size": [239.7, 133.7, 39.0]}, {"node": "n2", "name": "L1_AFO小腿件_v15(不改)", "group": "小腿件", "explode": [-70, 0, 130], "size": [69.1, 98.2, 239.2]}, {"node": "n3", "name": "T1_鞋頭擋塊_H22_T9(v17放大)", "group": "鞋頭擋塊", "explode": [130, 0, 50], "size": [60.9, 105.7, 30.0]}, {"node": "n4", "name": "B2_走線蓋板", "group": "走線蓋板", "explode": [0, 0, 30], "size": [172.1, 36.0, 1.5]}, {"node": "n5", "name": "C0-1_感測匣殼", "group": "FSR 感測匣", "explode": [0, 0, 108], "size": [42.0, 42.0, 14.8]}, {"node": "n6", "name": "C4-1_FSR支撐座", "group": "FSR 感測匣", "explode": [0, 0, 40], "size": [22.0, 22.0, 1.5]}, {"node": "n7", "name": "C3-1_FSR402", "group": "FSR 感測匣", "explode": [0, 0, 52], "size": [35.1, 18.3, 0.5]}, {"node": "n8", "name": "C5-1_保護傳力片", "group": "FSR 感測匣", "explode": [0, 0, 62], "size": [10.0, 10.0, 0.5]}, {"node": "n9", "name": "C2-1_鋼珠Ø5", "group": "FSR 感測匣", "explode": [0, 0, 72], "size": [5.0, 5.0, 5.0]}, {"node": "n10", "name": "C1-1_TPU導槽", "group": "FSR 感測匣", "explode": [0, 0, 86], "size": [22.0, 22.0, 11.8]}, {"node": "n11", "name": "C0-2_感測匣殼", "group": "FSR 感測匣", "explode": [0, 0, 108], "size": [42.0, 42.0, 14.8]}, {"node": "n12", "name": "C4-2_FSR支撐座", "group": "FSR 感測匣", "explode": [0, 0, 40], "size": [22.0, 22.0, 1.5]}, {"node": "n13", "name": "C3-2_FSR402", "group": "FSR 感測匣", "explode": [0, 0, 52], "size": [34.0, 24.4, 0.5]}, {"node": "n14", "name": "C5-2_保護傳力片", "group": "FSR 感測匣", "explode": [0, 0, 62], "size": [10.0, 10.0, 0.5]}, {"node": "n15", "name": "C2-2_鋼珠Ø5", "group": "FSR 感測匣", "explode": [0, 0, 72], "size": [5.0, 5.0, 5.0]}, {"node": "n16", "name": "C1-2_TPU導槽", "group": "FSR 感測匣", "explode": [0, 0, 86], "size": [22.0, 22.0, 11.8]}, {"node": "n17", "name": "E5_長條麵包板(示意)", "group": "電子（示意）", "explode": [-95, 0, 130], "size": [9.5, 55.0, 165.0]}, {"node": "n18", "name": "E6_ESP32(示意)", "group": "電子（示意）", "explode": [-95, 0, 130], "size": [13.0, 28.3, 51.5]}, {"node": "n19", "name": "布鞋鞋底(示意)", "group": "布鞋（示意）", "explode": [0, 0, 210], "size": [309.3, 105.9, 30.0]}, {"node": "n20", "name": "布鞋鞋面(示意)", "group": "布鞋（示意）", "explode": [0, 0, 210], "size": [303.3, 99.9, 68.0]}, {"node": "n21", "name": "A4_前掌魔鬼氈", "group": "魔鬼氈", "explode": [0, 0, 160], "size": [38.0, 125.0, 50.0]}, {"node": "n22", "name": "A4_中足魔鬼氈", "group": "魔鬼氈", "explode": [0, 0, 160], "size": [38.0, 119.2, 64.1]}, {"node": "n23", "name": "FSR 線(示意)", "group": "電子（示意）", "explode": [-80, 0, 60], "size": [17.3, 21.9, 75.0]}], "S1": [197.3, -25.0], "S2": [45.3, 12.0], "warp": [140.0, 1.422, 1.133, 50.0], "foot_size": [348.7, 133.7, 76.0], "shoe": [310.0, 110.0]};</script>
+<script type="importmap">{"imports":{"three":"./three/build/three.module.js","three/addons/":"./three/examples/jsm/"}}</script>
+<script type="module">
+import * as THREE from "three";
+import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
+const W=1280,H=720;
+const r=new THREE.WebGLRenderer({canvas:document.getElementById("c"),antialias:true,alpha:true,preserveDrawingBuffer:true});
+r.setPixelRatio(1); r.setSize(W,H,false);
+const scene=new THREE.Scene(), cam=new THREE.PerspectiveCamera(28,W/H,1,6000);
+scene.add(new THREE.HemisphereLight(0xffffff,0x778899,1.1));
+const sun=new THREE.DirectionalLight(0xffffff,1.4); sun.position.set(400,700,500); scene.add(sun);
+const fill=new THREE.DirectionalLight(0xffffff,0.5); fill.position.set(-500,200,-400); scene.add(fill);
+const root=new THREE.Group(); root.rotation.x=-Math.PI/2; scene.add(root);
+const HIDE=/布鞋|魔鬼氈|FSR 線/;
+// 步驟：[說明, 判斷函式, 位移(模型座標 mm)]
+const STEPS=[
+ ["① 拆下鞋頭擋塊 T1", n=>n.startsWith("T1"), ()=>[90,0,45]],
+ ["② 取下小腿件 L1 與麵包板 / ESP32", n=>/^(L1|E5|E6)/.test(n), n=>n.startsWith("L1")?[-70,0,150]:[-120,0,150]],
+ ["③ 掀起走線蓋板 B2", n=>n.startsWith("B2"), ()=>[0,0,28]],
+ ["④ 取出鋼珠式 FSR 感測匣（殼 / TPU / 鋼珠 / 保護片 / FSR / 支撐座）", n=>/^C\d/.test(n),
+   n=>[0,0,{C4:22,C3:34,C5:46,C2:60,C1:78,C0:104}[n.slice(0,2)]]],
+ ["⑤ 鬆開 6 × M4 螺絲，分離前段 F1B（可換穿鞋 / 赤腳前段）", n=>n.startsWith("F1B")||/^C\d-1/.test(n), ()=>[75,0,0]],
+];
+const parts=[]; const lineMat=new THREE.LineDashedMaterial({color:0xd35400,dashSize:6,gapSize:4});
+function ease(t){t=Math.min(1,Math.max(0,t));return t<.5?4*t*t*t:1-Math.pow(-2*t+2,3)/2}
+window.ready=false;
+fetch("model-shoe.glb").then(x=>x.arrayBuffer()).then(buf=>new GLTFLoader().parse(buf,"",g=>{
+  g.scene.updateMatrixWorld(true); const meshes=[]; g.scene.traverse(o=>{if(o.isMesh)meshes.push(o)});
+  const names={}; (window.META.parts).forEach(p=>names[p.node]=p.name);
+  for(const o of meshes){
+    let n=o; while(n&&!names[n.name]) n=n.parent; if(!n) continue; const name=names[n.name];
+    if(HIDE.test(name)) continue;
+    o.geometry=o.geometry.clone(); o.geometry.applyMatrix4(o.matrixWorld); o.position.set(0,0,0);o.rotation.set(0,0,0);o.scale.set(1,1,1);
+    o.material=o.material.clone(); o.material.side=THREE.DoubleSide;
+    o.add(new THREE.LineSegments(new THREE.EdgesGeometry(o.geometry,30),new THREE.LineBasicMaterial({color:0x1b232c,transparent:true,opacity:.6})));
+    const h=new THREE.Group(); h.add(o); root.add(h);
+    o.geometry.computeBoundingBox(); const c=new THREE.Vector3(); o.geometry.boundingBox.getCenter(c);
+    const segs=[];  // 每一步的位移
+    STEPS.forEach((s,i)=>{ segs[i]=s[1](name)?new THREE.Vector3(...s[2](name)):new THREE.Vector3() });
+    const lg=new THREE.BufferGeometry().setFromPoints([c.clone(),c.clone()]); const line=new THREE.Line(lg,lineMat); line.visible=false; root.add(line);
+    parts.push({h,c,segs,line,name});
+  }
+  window.ready=true;
+}));
+const T_HOLD0=1.5, T_STEP=1.8, T_HOLD1=4.0, T_BACK=0.9, T_END=1.5;
+window.DUR=T_HOLD0+STEPS.length*T_STEP+T_HOLD1+STEPS.length*T_BACK+T_END;
+const target=new THREE.Vector3(170,175,0);
+window.renderAt=function(t){
+  // 每一步進度 0..1
+  const k=STEPS.map((_,i)=>{
+    const a=T_HOLD0+i*T_STEP; let v=ease((t-a)/T_STEP);
+    const back0=T_HOLD0+STEPS.length*T_STEP+T_HOLD1, bi=STEPS.length-1-i; // 反向依序裝回
+    v-=ease((t-back0-bi*T_BACK)/T_BACK); return Math.max(0,v);
+  });
+  let cap="組裝狀態";
+  const tEx=t-T_HOLD0, back0=T_HOLD0+STEPS.length*T_STEP+T_HOLD1;
+  if(tEx>=0 && t<back0) cap=t<T_HOLD0+STEPS.length*T_STEP?STEPS[Math.min(STEPS.length-1,Math.floor(tEx/T_STEP))][0]:"完全爆炸（共用後段 F1A 固定不動）";
+  else if(t>=back0 && t<back0+STEPS.length*T_BACK) cap="依序組裝回去";
+  document.getElementById("step").textContent=cap;
+  for(const p of parts){
+    const d=new THREE.Vector3(); p.segs.forEach((s,i)=>d.addScaledVector(s,k[i]));
+    p.h.position.copy(d);
+    const moved=d.length()>0.5; p.line.visible=moved;
+    if(moved){ const pos=p.line.geometry.attributes.position; pos.setXYZ(0,p.c.x,p.c.y,p.c.z); pos.setXYZ(1,p.c.x+d.x,p.c.y+d.y,p.c.z+d.z); pos.needsUpdate=true; p.line.computeLineDistances(); }
+  }
+  const ang=THREE.MathUtils.degToRad(-125+70*t/window.DUR), el=THREE.MathUtils.degToRad(32);
+  const dist=1260;
+  cam.position.set(target.x+dist*Math.cos(el)*Math.cos(ang), target.y+dist*Math.sin(el), target.z+dist*Math.cos(el)*Math.sin(ang)*-1);
+  cam.lookAt(target); r.render(scene,cam);
+};
+</script></body></html>
