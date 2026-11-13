@@ -589,3 +589,44 @@ if __name__ == "__main__":
             named.append((base, tm))
         write_faceted_step(os.path.join(out, "STEP", "AFO_v17_assembly_foot_and_sensors.step"), named)
         print("exported to", out, "printable:", printable)
+
+
+# ------------------------------------------------------------------ build123d 原生托盤：修改規格輸出
+def native_spec(p, d):
+    """把 build() 對腳底件做的所有修改，整理成 build123d 可讀的原始幾何清單（JSON 可序列化）。"""
+    S1, S2, ZT, ZB = d["S1"], d["S2"], d["ZT"], d["ZB"]
+    rings = lambda g: [[np.round(np.asarray(q.exterior.coords)[:-1], 4).tolist(),
+                        [np.round(np.asarray(h.coords)[:-1], 4).tolist() for h in q.interiors]]
+                       for q in getattr(g, "geoms", [g]) if q.geom_type == "Polygon" and q.area > 0.01]
+    U, C = [], []                    # union / cut
+    for S in (S1, S2):
+        U.append(dict(t="cyl", x=S[0], y=S[1], z0=0.0, d=p["Insert_D"] + 4, h=ZT - 0.01))
+    if p.get("Split", True):
+        xs0, xs1 = p["Split_X"] - p["Lap_L"] / 2 - 6, p["Split_X"] + p["Lap_L"] / 2 + 6
+        U.append(dict(t="prism", polys=rings(d["outer"].buffer(-1.0).intersection(sbox(xs0, -200, xs1, 200))), z0=0.0, h=ZT - 0.01))
+    for S in (S1, S2):
+        C.append(dict(t="cyl", x=S[0], y=S[1], z0=p["Base_Floor"], d=d["pocket_D"], h=ZT))
+        C.append(dict(t="cyl", x=S[0], y=S[1], z0=ZB, d=p["Insert_D"] + 0.4, h=ZT))
+        r = p["Screw_PCD"] / 2
+        for k in range(3):
+            a = math.radians(15 + 120 * k)
+            C.append(dict(t="cyl", x=S[0] + r * math.cos(a), y=S[1] + r * math.sin(a), z0=ZB - 5, d=3.6, h=5.2))
+    for (x, y) in d["spacer"][1]:
+        C.append(dict(t="cyl", x=x, y=y, z0=ZT - 6.0, d=p["Heel_Spacer_Peg_D"] + 0.3, h=7.0))
+    if p.get("Toe_Stopper") == "custom":
+        for (x, y) in d["toe_pegs"]:
+            C.append(dict(t="cyl", x=x, y=y, z0=ZT - 7.0, d=p["Toe_Peg_D"] + 0.3, h=8.0))
+    path1, path2 = d["wire_path"]
+    wire = unary_union([path1.buffer(p["Wire_W"] / 2), path2.buffer(p["Wire_W"] / 2)])
+    cover = unary_union([path1.buffer(p["Cover_W"] / 2), path2.buffer(p["Cover_W"] / 2)])
+    pockets = unary_union([Point(*S).buffer(p["Insert_D"] / 2 + 0.2) for S in (S1, S2)])
+    cover = cover.difference(pockets).intersection(d["inner"].buffer(-0.5))
+    C.append(dict(t="prism", polys=rings(wire.intersection(sbox(4.5, -200, 400, 200))), z0=p["Wire_Bottom"], h=ZT + 1 - p["Wire_Bottom"]))
+    C.append(dict(t="prism", polys=rings(cover.buffer(0.2)), z0=ZT - p["Cover_T"], h=p["Cover_T"] + 1))
+    zc = d["exit"][2]
+    C.append(dict(t="cyl_dir", o=[12.0, 0.0, zc], dir=[-1, 0, 0], d=p["Exit_D"], h=30.0))
+    spec = dict(warp=list(d["warp"]), v15_toe=p.get("Toe_Stopper") not in (None, "custom"), union=U, cut=C,
+                split=dict(on=bool(p.get("Split", True)), Xc=p["Split_X"], L=p["Lap_L"], Zl=p["Lap_Z"], g=p["Split_Gap"], ZT=ZT,
+                           screws=[[p["Split_X"] + dx, y] for dx in p["Split_Screw_DX"] for y in p["Split_Screw_Y"]]),
+                name=p.get("Variant_Name", ""))
+    return spec
