@@ -119,9 +119,20 @@ def to_trimesh(man):
     mm = man.to_mesh()
     return trimesh.Trimesh(np.asarray(mm.vert_properties)[:, :3], np.asarray(mm.tri_verts), process=False)
 
-def cq_to_manifold(w, tol=0.02):
+# 輸出精度：弧線每段最多轉 5°，弦高偏差 ≤ 0.02 mm（所有圓、孔、圓角同一精度）
+LIN_TOL = 0.02
+ANG_TOL = math.radians(5.0)
+import shapely.geometry.base as _sgb
+_orig_buffer = _sgb.BaseGeometry.buffer
+def _buffer_hi(self, distance, quad_segs=18, **kw):     # shapely 圓角：每 1/4 圓 18 段 = 5°
+    kw.pop("resolution", None)
+    return _orig_buffer(self, distance, quad_segs=quad_segs, **kw)
+_sgb.BaseGeometry.buffer = _buffer_hi
+
+
+def cq_to_manifold(w, tol=LIN_TOL):
     s = w.val() if isinstance(w, cq.Workplane) else w
-    v, t = s.tessellate(tol, 0.1)
+    v, t = s.tessellate(tol, ANG_TOL)
     V = np.array([[q.x, q.y, q.z] for q in v]); F = np.array(t)
     tm = trimesh.Trimesh(V, F, process=True)
     tm.merge_vertices()
@@ -276,6 +287,9 @@ def build(p=P, verbose=True):
     outer_wall = Polygon(grown.exterior).buffer(-8, join_style=1)
     d["outer"] = outer; d["inner"] = inner; d["outer_wall"] = outer_wall
 
+    # 1c) v15 小腿件鎖附孔重新鑽孔：v15 原網格只有約 30 邊形 → 以真圓 Ø3.4（+0.02）+ 90° 沉頭 Ø7 重切，精度同其他孔
+    F = F - cq_to_manifold(v15_screw_holes(foot))
+
     # 2) 感測器位置下方實心化（底部格柵在感測匣下方補實）
     for S in (S1, S2):
         F = F + cq_to_manifold(cyl(S[0], S[1], 0.0, p["Insert_D"] + 4, ZT - 0.01))
@@ -321,7 +335,7 @@ def build(p=P, verbose=True):
     add(cq.Workplane("XY").add(cq.Solid.makeCylinder(p["Exit_D"] / 2, 30, cq.Vector(12, 0, zc), cq.Vector(-1, 0, 0))))
     d["exit"] = (0.0, 0.0, zc)
     d["wire_path"] = (path1, path2)
-    F = F - cq_to_manifold(cut, 0.02)
+    F = F - cq_to_manifold(cut)
     foot_new = to_trimesh(F)
 
     parts = {}
@@ -390,6 +404,31 @@ def heel_spacer(p, d):
     for (x, y) in pegs:
         w = w.union(cyl(x, y, ZT - 5.5, p["Heel_Spacer_Peg_D"], 5.6))
     return as_mesh(w)
+
+
+def v15_screw_holes(foot):
+    """v15 腳底件後跟杯上的 3 個 M3 沉頭孔（後牆 1、兩側各 1），由 v15 網格量得位置與軸向"""
+    D, DK = 3.50, 7.10          # M3 通孔 Ø3.5（略大於 v15 的 Ø3.4，確保完全切掉舊的多邊形面）
+    holes = [((0.0, 0.0, 50.0), (1.0, 0.0, 0.0))]                       # 後牆：沿 +X
+    for sg in (1, -1):
+        n = np.array([-0.31, sg * 0.95, 0.0]); n /= np.linalg.norm(n)   # 側牆法向（朝外）
+        holes.append(((31.345, sg * 46.9, 50.0), tuple(-n)))             # 由內往外的軸向取反 → 進入方向
+    cut = None
+    for (pt, d) in holes:
+        d = np.asarray(d, float); d /= np.linalg.norm(d); pt = np.asarray(pt, float)
+        # 外表面（沉頭所在）：在孔旁 z+3 處沿軸向射線量牆外表面，再投回軸線
+        probe = pt + np.array([0, 0, 3.0])
+        loc, _, _ = foot.ray.intersects_location([probe + d * 10], [-d])
+        t = (probe + d * 10 - loc) @ d if len(loc) else np.array([10.0])
+        t = t[(t > 0) & (t < 25)]
+        outer = pt + d * (10 - t.max()) if len(t) else pt
+        o = outer - d * 3.0
+        c = cq.Solid.makeCylinder(D / 2, 20.0, cq.Vector(*o), cq.Vector(*d))
+        depth = (DK - D) / 2
+        cone = cq.Solid.makeCone(DK / 2 + 3.0, D / 2, depth + 3.0, cq.Vector(*(outer - d * 3.0)), cq.Vector(*d))
+        w = cq.Workplane("XY").add(c).union(cq.Workplane("XY").add(cone))
+        cut = w if cut is None else cut.union(w)
+    return cut
 
 
 def foot_in_tray(p):
@@ -465,7 +504,7 @@ def as_mesh(w):
     if isinstance(w, trimesh.Trimesh):
         return w
     s = w.val() if isinstance(w, cq.Workplane) else w
-    v, t = s.tessellate(0.02, 0.1)
+    v, t = s.tessellate(LIN_TOL, ANG_TOL)
     return trimesh.Trimesh(np.array([[q.x, q.y, q.z] for q in v]), np.array(t), process=True)
 
 
