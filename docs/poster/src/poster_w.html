@@ -8,15 +8,15 @@
 html, body { margin:0; padding:0; }
 body { width:594mm; height:841mm; overflow:hidden; background:#fff; color:#111;
   font-family: "Times New Roman", "DFKai-SB", "標楷體", "AR PL UKai TW", serif; }
-header { background:var(--navy); color:#fff; height:96mm; display:grid; grid-template-columns: 70mm 1fr 70mm; align-items:center; padding:0 12mm; }
+header { background:var(--navy); color:#fff; height:108mm; display:grid; grid-template-columns: 70mm 1fr 70mm; align-items:center; padding:0 12mm; }
 .badge { background:#fff; border-radius:50%; width:58mm; height:58mm; display:flex; align-items:center; justify-content:center; }
 .badge img { width:52mm; }
 .lab { background:#fff; border-radius:4mm; padding:3mm; }
 .lab img { width:100%; display:block; }
 h1 { margin:0; text-align:center; font-size:92px; line-height:1.15; letter-spacing:3px; font-weight:700; }
 .en { text-align:center; font-size:38px; margin-top:2mm; }
-.who { text-align:center; font-size:40px; margin-top:3mm; }
-.who span { margin:0 8mm; }
+.who { text-align:center; font-size:38px; line-height:1.3; margin-top:2mm; }
+.who span { display:block; }
 main { padding:8mm 12mm 0; }
 .box { position:relative; border:3px solid var(--line); border-radius:5mm; padding:11mm 6mm 4mm; margin-top:9mm; background:#fff; }
 .tab { position:absolute; top:-8mm; left:6mm; background:#fff; border:3px solid var(--line); border-radius:3mm; padding:1mm 6mm; font-size:44px; font-weight:700; letter-spacing:2px; }
@@ -64,7 +64,7 @@ ol.c li { margin-bottom:1.5mm; }
   <div>
     <h1>承重七公斤之工業搬運用下肢外骨骼<br>導納控制架構設計與關節致動器鑑別</h1>
     <div class="en">Admittance Control and Actuator Identification for a 7-kg Load-Carrying Lower-Limb Exoskeleton</div>
-    <div class="who"><span>指導老師：李羿慧 博士、連啓翔 博士</span><span>組員：蔡朝欽、林均澤、周瑋澤、楊翔安</span></div>
+    <div class="who"><span>指導老師：李羿慧 博士、王紹宇 博士、連啓翔 博士</span><span>組員：蔡朝欽、林均澤、周瑋澤、楊翔安</span></div>
   </div>
   <div class="lab"><img src="assets/lab_logo.png" alt="齒輪設計與先進製造實驗室"></div>
 </header>
@@ -101,7 +101,7 @@ ol.c li { margin-bottom:1.5mm; }
       <div>需求分析<br>文獻探討</div><div>元件選用<br>馬達採購</div><div>IMU／FSR<br>量測驗證</div>
       <div>致動器<br>系統鑑別</div><div class="go">單關節<br>導納控制</div><div class="todo">7 kg 承重<br>整機測試</div>
     </div>
-    <div class="legend"><i style="background:#eef6ee"></i>已完成<i style="background:#fdf0de;border-color:#b26a00"></i>進行中<i style="border-style:dashed"></i>規劃中</div>
+    <div class="legend"><span style="color:#5a9a5a">■</span> 已完成　　<span style="color:#e0a040">■</span> 進行中　　<span style="color:#777">□</span> 規劃中</div>
     <figure><img src="assets/f01.png" alt="系統硬體架構" style="width:96%"><figcaption>系統硬體架構圖</figcaption></figure>
     <p>穿戴者與外骨骼視為人體–外骨骼耦合系統（HES），以 DOB 由模型估測之總關節力矩扣除馬達、上半身（含 7 kg 負載）與地面反力項得穿戴者力矩，再經導納函數轉為角速度命令，重力項用以抑制過大之大腿擺盪[1]。</p>
     <div class="eq">τ̂<sub>h</sub> = τ̂<sub>e</sub> − K<sub>t</sub>i<sub>q</sub> − τ̂<sub>b</sub> − J<sup>T</sup>F<sub>GR</sub><span>(1)</span></div>
