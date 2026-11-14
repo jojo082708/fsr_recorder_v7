@@ -2,7 +2,7 @@ import matplotlib; matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 from matplotlib import font_manager as fm
 fm.fontManager.addfont("/usr/share/fonts/truetype/arphic/ukai.ttc")
-plt.rcParams["font.family"]=["AR PL UKai TW"]; plt.rcParams["axes.unicode_minus"]=False
+plt.rcParams["font.family"]=["AR PL UKai TW"]; plt.rcParams["axes.unicode_minus"]=False; plt.rcParams["mathtext.fontset"]="dejavuserif"
 T=[[49.3,48,47.2,48.2],[49.1,49.1,48.9,48.4],[49.9,49.8,49.5,49.9],[51.8,51.3,51.3,50.4]]
 # Fig1 node layout
 fig,ax=plt.subplots(figsize=(7,6.2))
@@ -27,13 +27,13 @@ fig,ax=plt.subplots(figsize=(6,4.6))
 ax.plot([0,0],[-1.3,1.3],lw=3,color='k'); ax.text(-0.08,1.35,"平板表面",ha='right',fontsize=12)
 ax.add_patch(plt.Rectangle((0,-0.5),0.5,1,fill=True,fc='#dde8f5',ec='steelblue',ls='--',lw=1.5))
 pts={"T":(0,0),"T_up":(0,1),"T_down":(0,-1),"T_in":(1,0)}
-lab={"T":"Tm","T_up":"T上","T_down":"T下","T_in":"T內"}
+lab={"T":"$T_{m,n}$","T_up":"$T_{m,n+1}$","T_down":"$T_{m,n-1}$","T_in":"$T_{m+1,n}$"}
 for k,(x,y) in pts.items():
     ax.plot(x,y,'o',color='crimson' if k=="T" else 'k',ms=8); ax.text(x+0.07,y+0.08,lab[k],fontsize=14)
 for (x1,y1) in [(0,1),(0,-1),(1,0)]:
     ax.annotate("",xy=(0.02*x1,0.12*y1),xytext=(x1*0.95,y1*0.85),arrowprops=dict(arrowstyle='->',color='gray'))
 ax.annotate("",xy=(-0.05,-0.15),xytext=(-0.9,-0.15),arrowprops=dict(arrowstyle='->',color='darkorange',lw=2))
-ax.text(-0.95,-0.42,"對流 h(T∞ - Tm)",fontsize=12,color='darkorange')
+ax.text(-1.75,-0.45,"對流 $h\\,(T_\\infty - T_{m,n})$",fontsize=12,color='darkorange')
 ax.text(0.53,-0.7,"控制體積 (Δx/2)×Δy",fontsize=11,color='steelblue')
-ax.set_xlim(-1.5,1.6); ax.set_ylim(-1.4,1.6); ax.set_aspect('equal'); ax.axis('off')
+ax.set_xlim(-1.85,1.6); ax.set_ylim(-1.4,1.6); ax.set_aspect('equal'); ax.axis('off')
 fig.savefig("fig2.png",dpi=200,bbox_inches='tight')
