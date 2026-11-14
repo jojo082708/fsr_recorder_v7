@@ -190,10 +190,15 @@ E_css=D_css+'''
 .sub .tab {{ position:absolute; top:-7mm; left:5mm; display:block; background:#fff; border:3px solid; border-radius:3mm; padding:0.5mm 5mm; font-size:30px; }}
 .c1, .c3 {{ border-color:#1E6B5C; }} .c1 .tab, .c3 .tab {{ border-color:#1E6B5C; }}
 .c2, .c4 {{ border-color:#B26A00; }} .c2 .tab, .c4 .tab {{ border-color:#B26A00; }}
-header {{ height:118mm; }}
+header {{ height:118mm; grid-template-columns: 62mm 1fr 128mm; gap:4mm; }}
+.lab {{ padding:0; }}
+.pill {{ width:130mm; }}
+h1 {{ font-size:80px; letter-spacing:2px; }}
 p {{ font-size:24px; }}
 img[alt="AK60-39"] {{ width:86% !important; }} img[alt="外骨骼姿態模擬"] {{ width:84%; }} img[alt="系統硬體架構"] {{ width:94% !important; }}
 '''.replace('{{','{').replace('}}','}')
 E_body=D_body.replace('<div class="rl" data-shape></div>','')
+E_body=E_body.replace('國立聯合大學 機械工程學系 電控組','國立聯合大學 機械工程學系')
+E_body=E_body.replace('style="left:6mm; bottom:3mm; height:24mm;"','style="left:6mm; bottom:2mm; height:28mm;"')
 open('poster_E.html','w').write(page('下肢外骨骼專題海報－Canva 配色外框版',E_css,E_body))
 print('E ok')
