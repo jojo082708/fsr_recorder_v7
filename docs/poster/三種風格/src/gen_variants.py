@@ -181,3 +181,19 @@ D_body=D_body.replace('</main>','</main>\n'+footer,1)
 D_body=D_body.replace('<figure><img src="assets/f03.png" alt="IMU角速度實驗"><figcaption>IMU 角速度實驗架設</figcaption></figure>','<figure><img src="assets/f03.png" alt="IMU角速度實驗" style="width:82%"><figcaption>IMU 角速度實驗架設</figcaption></figure>')
 open('poster_D.html','w').write(page('下肢外骨骼專題海報－Canva 簡報風',D_css,D_body))
 print('D ok')
+
+# ---------- E：Canva 配色＋外框 ----------
+E_css=D_css+'''
+.box {{ position:relative; border:3px solid #3D4B63; border-radius:5mm; padding:11mm 6mm 3mm; margin-top:9mm; background:#fff; }}
+.box > .tab {{ position:absolute; top:-8mm; left:6mm; display:block; background:#fff; border:3px solid #3D4B63; border-radius:3mm; padding:1mm 6mm; font-size:42px; letter-spacing:2px; }}
+.sub {{ position:relative; border:3px solid; border-radius:4mm; padding:9mm 4mm 2.5mm; margin-top:8mm; }}
+.sub .tab {{ position:absolute; top:-7mm; left:5mm; display:block; background:#fff; border:3px solid; border-radius:3mm; padding:0.5mm 5mm; font-size:30px; }}
+.c1, .c3 {{ border-color:#1E6B5C; }} .c1 .tab, .c3 .tab {{ border-color:#1E6B5C; }}
+.c2, .c4 {{ border-color:#B26A00; }} .c2 .tab, .c4 .tab {{ border-color:#B26A00; }}
+header {{ height:118mm; }}
+p {{ font-size:24px; }}
+img[alt="AK60-39"] {{ width:86% !important; }} img[alt="外骨骼姿態模擬"] {{ width:84%; }} img[alt="系統硬體架構"] {{ width:94% !important; }}
+'''.replace('{{','{').replace('}}','}')
+E_body=D_body.replace('<div class="rl" data-shape></div>','')
+open('poster_E.html','w').write(page('下肢外骨骼專題海報－Canva 配色外框版',E_css,E_body))
+print('E ok')
