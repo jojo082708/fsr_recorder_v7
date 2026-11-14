@@ -48,7 +48,6 @@ const FONT = 'DFKai-SB';
         lw: parseFloat(st.borderTopWidth), dash: st.borderTopStyle === 'dashed', radius: parseFloat(st.borderTopLeftRadius) || 0, ...extra });
     };
     out.push({ t: 'bg', color: hex(getComputedStyle(document.body).backgroundColor) || 'FFFFFF' });
-    document.querySelectorAll('[data-shape]').forEach((el) => box(el));
     // 背景色塊
     box(document.querySelector('header'));
     box(document.querySelector('.badge'), { oval: true });
@@ -65,6 +64,7 @@ const FONT = 'DFKai-SB';
     });
     document.querySelectorAll('.legend i').forEach((el) => box(el));
     document.querySelectorAll('.tab').forEach((el) => { box(el); txt(el, { valign: 'middle' }); });
+    document.querySelectorAll('[data-shape]').forEach((el) => box(el));
     // 圖片
     document.querySelectorAll('img').forEach((el) => out.push({ t: 'img', src: el.getAttribute('src'), ...R(el) }));
     // 文字

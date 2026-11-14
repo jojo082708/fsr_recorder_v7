@@ -1,7 +1,7 @@
 const { chromium } = require('playwright');
 (async () => {
   const b = await chromium.launch();
-  for (const n of ['A', 'B', 'C']) {
+  for (const n of (process.argv.slice(2).length ? process.argv.slice(2) : ['A', 'B', 'C'])) {
     const p = await b.newPage({ viewport: { width: 2245, height: 3179 }, deviceScaleFactor: 1.6 });
     await p.goto('file://' + __dirname + `/poster_${n}.html`); await p.waitForTimeout(600);
     await p.screenshot({ path: `out_${n}.png` });

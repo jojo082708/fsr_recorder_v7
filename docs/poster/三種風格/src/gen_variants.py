@@ -121,3 +121,63 @@ C_body=C_body.replace('<span style="color:#5a9a5a">■</span>','<span style="col
 for n,css,b,t in [('A',A_css,A_body,'工業安全風'),('B',B_css,B_body,'學術極簡風'),('C',C_css,C_body,'數據亮點風')]:
     open(f'poster_{n}.html','w').write(page('下肢外骨骼專題海報－'+t,css,b))
 print('ok')
+
+# ---------- D：Canva 簡報風（實驗室投影片範本） ----------
+JH='"Microsoft JhengHei","WenQuanYi Zen Hei",sans-serif'
+D_css=f'''
+body {{ background:#ffffff; color:#1f1f1f; font-family:{JH}; }}
+header {{ background:#ffffff; color:#3D4B63; height:124mm; grid-template-columns: 62mm 1fr 78mm; }}
+.badge, .lab {{ background:#fff; }}
+h1 {{ color:#3D4B63; font-family:{KAI}; font-weight:900; font-size:84px; letter-spacing:5px; line-height:1.2; }}
+.en {{ color:#2F5597; font-weight:700; font-size:30px; }}
+.pill {{ display:block; width:150mm; margin:3mm auto 2mm; background:#4472C4; border:3px solid #8FAADC; border-radius:6mm; color:#fff; text-align:center; font-family:"Times New Roman",serif; font-size:36px; padding:1.5mm 0; }}
+.who {{ color:#595959; font-weight:700; font-size:34px; }}
+.hr {{ height:2px; background:#222222; margin:0 12mm; }}
+main {{ padding-top:2mm; }}
+.box {{ background:#ffffff; border:none; border-radius:0; padding:2mm 2mm 2mm; margin-top:5mm; }}
+.box > .tab {{ position:static; display:block; background:none; border:none; border-radius:0; padding:0; color:#3D4B63; font-family:{KAI}; font-size:46px; font-weight:900; letter-spacing:3px; }}
+.box > .rl {{ height:2px; background:#222222; margin:1.5mm 0 3mm; }}
+.sub {{ border:none; border-radius:4mm; padding:3mm 4mm 3mm; margin-top:4mm; }}
+.sub .tab {{ position:static; display:block; background:none; border:none; padding:0 0 1.5mm; font-size:32px; font-weight:900; }}
+.c1 {{ background:#E6F0EE; }} .c1 .tab {{ color:#1E6B5C; }}
+.c2 {{ background:#FDF0DE; }} .c2 .tab {{ color:#B26A00; }}
+.c3 {{ background:#E6F0EE; }} .c3 .tab {{ color:#1E6B5C; }}
+.c4 {{ background:#FDF0DE; }} .c4 .tab {{ color:#B26A00; }}
+p {{ font-size:24px; font-weight:500; }}
+.b {{ color:#2F5597; }} .r {{ color:#C00000; }}
+table {{ background:#fff; font-size:22px; }}
+th, td {{ border:1px solid #DCE3EA; }}
+th {{ background:#1E2A4A; color:#fff; border-top:1px solid #DCE3EA; border-bottom:1px solid #DCE3EA; }}
+th:first-child {{ background:#A9D2CF; color:#1F1F1F; }}
+td:first-child {{ background:#B7D9D6; font-weight:700; }}
+tr:nth-child(odd) td:not(:first-child) {{ background:#EAF2F8; }}
+tr:last-child td {{ border-bottom:1px solid #DCE3EA; }}
+.goal .l div {{ background:#F2F4F7; border-left:2mm solid #1F6E8C; }}
+.tgt {{ background:#1E2A4A; }} .tgt h3 {{ border-bottom-color:#A9D2CF; }} .tgt .g div b {{ color:#FFC000; }}
+.flow div {{ background:#1F6E8C; border-color:#1F6E8C; color:#fff; border-radius:3mm; font-weight:700; }}
+.flow div.go {{ background:#FFC000; border-color:#FFC000; color:#1F1F1F; }}
+.flow div.todo {{ background:#fff; border:2px dashed #1F6E8C; color:#1F6E8C; }}
+.foot {{ position:absolute; left:0; right:0; bottom:0; height:30mm; }}
+.foot img, .foot div {{ position:absolute; }}
+.box {{ margin-top:4mm; }} p {{ font-size:23px; }} th, td {{ padding:0.8mm 1.5mm; }}
+img[alt="AK60-39"] {{ width:76% !important; }} img[alt="外骨骼姿態模擬"] {{ width:74%; }} .sub {{ padding:2.5mm 4mm 2mm; }} img[alt="系統硬體架構"] {{ width:88% !important; }}
+'''
+footer='''<div class="foot">
+  <img src="assets/lab_footer.png" alt="齒輪設計與先進製造實驗室" style="left:6mm; bottom:3mm; height:24mm;">
+  <img src="assets/screw.png" alt="" style="left:200mm; bottom:7mm; height:9mm;">
+  <div data-shape style="left:262mm; bottom:8.5mm; width:22mm; height:6mm; background:#4472C4;"></div>
+  <img src="assets/screw.png" alt="" style="left:296mm; bottom:7mm; height:9mm;">
+  <div data-shape style="left:358mm; bottom:8.5mm; width:22mm; height:6mm; background:#4472C4;"></div>
+  <div data-text style="left:430mm; bottom:5mm; width:120mm; height:14mm; font-family:'Times New Roman',serif; font-size:52px; font-weight:700; color:#000; text-align:center;">2026/11/14</div>
+  <img src="assets/gear_badge.png" alt="" style="right:6mm; bottom:3mm; height:24mm;">
+</div>'''
+D_body=body.replace('<div class="who">','<div class="pill" data-shape><span data-text>國立聯合大學 機械工程學系 電控組</span></div>\n    <div class="who">',1)
+D_body=D_body.replace('</header>','</header>\n<div class="hr" data-shape></div>',1)
+cn={'摘要':'一','研究動機':'二','研究目標':'三','研究方法':'四','研究結果':'五','結論':'六'}
+for k,v in cn.items():
+    D_body=D_body.replace(f'<div class="box"><div class="tab">{k}</div>',f'<div class="box"><div class="tab">{v}、{k}</div><div class="rl" data-shape></div>')
+D_body=D_body.replace('<span style="color:#5a9a5a">■</span>','<span style="color:#1F6E8C">■</span>').replace('<span style="color:#e0a040">■</span>','<span style="color:#FFC000">■</span>').replace('<span style="color:#777">□</span>','<span style="color:#1F6E8C">□</span>')
+D_body=D_body.replace('</main>','</main>\n'+footer,1)
+D_body=D_body.replace('<figure><img src="assets/f03.png" alt="IMU角速度實驗"><figcaption>IMU 角速度實驗架設</figcaption></figure>','<figure><img src="assets/f03.png" alt="IMU角速度實驗" style="width:82%"><figcaption>IMU 角速度實驗架設</figcaption></figure>')
+open('poster_D.html','w').write(page('下肢外骨骼專題海報－Canva 簡報風',D_css,D_body))
+print('D ok')
