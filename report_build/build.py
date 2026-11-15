@@ -28,6 +28,7 @@ for sid,name in members[1:]:
     n=copy.deepcopy(tpl); setm(n,sid,name); prev.addnext(n); prev=n
 for p in P[13:17]: body.remove(p._p)          # 多 4 位組員 → 少 4 個空白段，封面維持一頁
 P[24].runs[12].text="14"
+P[9].runs[1].text="二"            # 組別：第二組
 # 刪除封面之後的舊內容
 sect=body.find(qn("w:sectPr")); keep=P[24]._p; cut=False
 for el in list(body):
@@ -159,6 +160,11 @@ for t in[
     item(t)
 h2("二、心得")
 bodyp("這次實驗把課堂上推導的有限差分節點方程式實際應用在量測數據上。以前只在黑板上看老師用內部節點列聯立方程式，這次自己推導對流邊界節點的能量平衡，才真正理解為什麼邊界節點的控制體積只有一半、內側節點的係數是 2，以及 {*h}Δ{*x}/{*k} 代表的物理意義。計算結果與實測值誤差不到 1 %，讓我對數值方法更有信心；同時也發現接觸熱阻、讀值時間與氣流分布都會影響結果，邊界條件必須依實際情況選擇。另外一個正負號的疏忽就會讓結果偏差，提醒我之後計算要逐項檢查。")
+
+# ================= 附錄 =================
+section("附錄：手寫計算")
+picture("handwritten.jpg",16.5)
+caption_below("附圖　對流邊界節點手寫計算")
 
 # 移除範本中已不用的舊圖片
 used=set(el.get(qn("r:embed")) for el in body.iter(qn("a:blip")))
