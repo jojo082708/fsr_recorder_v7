@@ -1,0 +1,97 @@
+<!doctype html><html><head><meta charset="utf-8">
+<style>html,body{margin:0;background:#fff}canvas{display:block}</style>
+<script type="importmap">{"imports":{"three":"./node_modules/three/build/three.module.js","three/addons/":"./node_modules/three/examples/jsm/"}}</script>
+</head><body>
+<script type="module">
+import * as THREE from "three";
+import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
+import { toCreasedNormals } from "three/addons/utils/BufferGeometryUtils.js";
+import { RoomEnvironment } from "three/addons/environments/RoomEnvironment.js";
+const q = new URLSearchParams(location.search);
+const W = +q.get("w") || 1600, H = +q.get("h") || 2000;
+const renderer = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true });
+renderer.setSize(W, H); renderer.setPixelRatio(1);
+renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = 1.25;
+renderer.outputColorSpace = THREE.SRGBColorSpace;
+document.body.appendChild(renderer.domElement);
+const scene = new THREE.Scene();
+const pmrem = new THREE.PMREMGenerator(renderer);
+scene.environment = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
+const meta = await (await fetch(q.get("meta"))).json();
+const mode = q.get("mode") || "shade";   // shade | line
+if (mode === "line") renderer.toneMapping = THREE.NoToneMapping;
+const explode = +q.get("explode") || 0;
+// 背景：SolidWorks 風格漸層
+if (mode === "shade") {
+  const c = document.createElement("canvas"); c.width = 2; c.height = 256;
+  const g = c.getContext("2d"); const gr = g.createLinearGradient(0, 0, 0, 256);
+  gr.addColorStop(0, "#f4f5f7"); gr.addColorStop(0.55, "#d9dde3"); gr.addColorStop(1, "#c3c8cf");
+  g.fillStyle = gr; g.fillRect(0, 0, 2, 256);
+  const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; scene.background = t;
+} else scene.background = new THREE.Color("#ffffff");
+const MAT = {
+  PRINT:  { r: .78, m: .05 }, PRINT2: { r: .55, m: .35 }, RED: { r: .55, m: .05 }, MOTOR: { r: .32, m: .85 },
+  MOTOR_D:{ r: .35, m: .9 }, BLACK: { r: .5, m: .3 }, STEEL: { r: .25, m: .95 }, PAD: { r: .9, m: 0 }, WHITE: { r: .6, m: 0 } };
+const root = new THREE.Group(); root.rotation.x = -Math.PI / 2;   // 模型 Z 朝上 → three Y 朝上
+scene.add(root);
+const gltf = await new Promise((res, rej) => new GLTFLoader().load(q.get("glb"), res, undefined, rej));
+const hide = (q.get("hide") || "").split(",").filter(Boolean);
+const only = (q.get("only") || "").split(",").filter(Boolean);
+gltf.scene.traverse(o => {
+  if (!o.isMesh) return;
+  const name = o.name in meta.parts ? o.name : (o.parent && o.parent.name in meta.parts ? o.parent.name : o.name);
+  const p = meta.parts[name]; if (!p) { console.log("nometa", o.name); return; }
+  if (hide.some(h => name.includes(h)) || (only.length && !only.some(h => name.includes(h)))) { o.visible = false; return; }
+  o.geometry.deleteAttribute("color");
+  o.geometry = toCreasedNormals(o.geometry, 0.5);
+  const mm = MAT[p.mat];
+  const col = new THREE.Color().setRGB(...p.color, THREE.SRGBColorSpace);
+  if (mode === "line") {
+    o.material = new THREE.MeshLambertMaterial({ color: 0xf2f2f2, polygonOffset: true, polygonOffsetFactor: 1, polygonOffsetUnits: 1 });
+    const e = new THREE.LineSegments(new THREE.EdgesGeometry(o.geometry, 20), new THREE.LineBasicMaterial({ color: 0x111111 }));
+    o.add(e);
+  } else {
+    o.material = new THREE.MeshStandardMaterial({ color: col, roughness: mm.r, metalness: mm.m, flatShading: false });
+    o.castShadow = o.receiveShadow = true;
+  }
+  if (explode && p.explode) o.position.set(...p.explode.map(v => v * explode));
+});
+root.add(gltf.scene);
+if (q.get("pair")) {   // 右腳＝左腳對身體中心面 y=-185 鏡射
+  const m = gltf.scene.clone(true);
+  m.traverse(o => { if (o.isMesh) { o.material = o.material.clone(); o.material.side = THREE.DoubleSide; } });
+  const g = new THREE.Group(); g.add(m); g.scale.set(1, -1, 1); g.position.set(0, -370, 0); root.add(g);
+  gltf.scene.traverse(o => { if (o.isMesh) o.material.side = THREE.DoubleSide; });
+}
+const v = (x, y, z) => new THREE.Vector3(x, z, -y);   // 模型座標 → three
+if (mode === "line") { scene.add(new THREE.HemisphereLight(0xffffff, 0x9aa0a8, 1.6)); const dl = new THREE.DirectionalLight(0xffffff, 1.4); dl.position.copy(v(900, 700, 1200)); scene.add(dl); scene.environment = null; }
+if (mode === "shade") {
+  scene.add(new THREE.HemisphereLight(0xffffff, 0x8a8f96, 0.6));
+  const d = new THREE.DirectionalLight(0xffffff, 1.6);
+  const tg = v(0, -60, -450); d.position.copy(v(700, 900, 600)); d.target.position.copy(tg); scene.add(d.target);
+  d.castShadow = true; d.shadow.mapSize.set(4096, 4096);
+  Object.assign(d.shadow.camera, { left: -700, right: 700, top: 700, bottom: -700, near: 10, far: 3000 }); d.shadow.bias = -0.0004;
+  scene.add(d);
+  const fill = new THREE.DirectionalLight(0xffffff, 0.5); fill.position.copy(v(-600, 300, 200)); scene.add(fill);
+  // 地面接影
+  const zs = meta.dims.zs;
+  const gnd = new THREE.Mesh(new THREE.PlaneGeometry(4000, 4000), new THREE.ShadowMaterial({ opacity: 0.18 }));
+  gnd.rotation.x = -Math.PI / 2; gnd.position.y = zs - 1.5; gnd.receiveShadow = true; scene.add(gnd);
+}
+let cam;
+const tgt = v(...q.get("t").split(",").map(Number));
+if (q.get("ortho")) {
+  // ortho=mm_per_px；視圖方向 dir=x|y|-y|...
+  const s = +q.get("ortho");
+  cam = new THREE.OrthographicCamera(-W / 2 * s, W / 2 * s, H / 2 * s, -H / 2 * s, 1, 6000);
+  const dir = q.get("dir");
+  const off = { "y": v(0, 2000, 0), "-y": v(0, -2000, 0), "x": v(2000, 0, 0), "-x": v(-2000, 0, 0) }[dir];
+  cam.position.copy(tgt.clone().add(off)); cam.up.set(0, 1, 0); cam.lookAt(tgt);
+} else {
+  cam = new THREE.PerspectiveCamera(+q.get("fov") || 22, W / H, 5, 10000);
+  cam.position.copy(v(...q.get("c").split(",").map(Number))); cam.lookAt(tgt);
+}
+renderer.render(scene, cam);
+window.__done = true;
+</script></body></html>
