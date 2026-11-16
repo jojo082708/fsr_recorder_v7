@@ -142,8 +142,8 @@ h2("二、心得")
 bodyp("這次實驗把課堂上的節點能量平衡實際用在量測數據上，親自推導對流邊界節點後，才理解為什麼邊界節點只有半個控制體積、內側節點係數為 2。計算結果與實測誤差不到 1 %，讓我對數值方法更有信心。")
 
 # ================= 附錄 =================
-section("附錄：手寫計算")
-picture("handwritten.jpg",16.5)
+add(f'<w:p {W}><w:pPr><w:keepNext/><w:spacing w:before="240" w:after="120"/></w:pPr>{wr("附錄：手寫計算",b=True,sz=32)}</w:p>')
+picture("handwritten.jpg",13)
 caption_below("附圖　對流邊界節點手寫計算")
 
 # 移除範本中已不用的舊圖片
